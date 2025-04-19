@@ -5,6 +5,7 @@ import './App.css';
 // Importar componentes del juego
 import GameControls from './components/GameControls';
 import PrintPage from './components/PrintPage';
+import Logo from './components/Logo';
 
 // Importar el contexto
 import { BingoProvider, useBingo } from './context/BingoContext';
@@ -49,7 +50,7 @@ function App() {
     <BingoProvider>
       <Layout className="layout">
         <Header style={{ display: 'flex', alignItems: 'center' }}>
-          <div className="logo">Bingaton</div>
+          <Logo />
           <Menu
             theme="dark"
             mode="horizontal"

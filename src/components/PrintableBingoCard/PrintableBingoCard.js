@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Typography, Divider } from 'antd';
 import { GlobalOutlined } from '@ant-design/icons';
+import Logo from '../Logo';
 import './PrintableBingoCard.css';
 
 const { Text } = Typography;
@@ -51,10 +52,10 @@ const PrintableBingoCard = ({
       
       {/* Espacio para el logo */}
       <div className="logo-space">
-        BINGATON
+        <Logo size="small" />
       </div>
     </Card>
   );
 };
 
-export default PrintableBingoCard; 
+export default PrintableBingoCard;

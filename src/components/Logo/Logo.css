@@ -1,0 +1,43 @@
+.bingaton-logo {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  background-image: linear-gradient(to right, #FF8C00, #FFD700, #4CAF50, #2196F3);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  cursor: pointer;
+}
+
+/* Tamaño por defecto (para la barra de navegación) */
+.logo-default {
+  float: left;
+  width: 120px;
+  height: 31px;
+  margin: 16px 24px 16px 0;
+  font-size: 22px;
+}
+
+/* Tamaño pequeño (para usar en cartones o lugares compactos) */
+.logo-small {
+  width: auto;
+  height: auto;
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* Tamaño grande (para la página principal o hero sections) */
+.logo-large {
+  width: auto;
+  height: auto;
+  margin: 0;
+  font-size: 36px;
+  letter-spacing: 1px;
+}
+
+.ant-row-rtl .bingaton-logo {
+  float: right;
+  margin: 16px 0 16px 24px;
+} 
