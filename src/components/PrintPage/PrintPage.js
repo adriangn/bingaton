@@ -17,54 +17,13 @@ const PrintPage = ({
   const printRef = useRef();
   const { setShowPrintView } = useBingo();
 
-  // Función para imprimir la página usando la ventana del navegador
-  const handlePrint = () => {
-    window.print();
-  };
-
-  // Función para generar PDF en formato A4
+  // Función para generar PDF en formato A4 y descargarlo
   const handleGeneratePDF = async () => {
     message.loading('Generando PDF en formato A4...', 0);
     
     try {
-      // Opciones de A4 en jsPDF (210 x 297 mm)
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true
-      });
-      
-      // Obtenemos todos los grupos de páginas (cada uno con 12 cartones)
-      const pageContainers = document.querySelectorAll('.print-page-container');
-      
-      // Para cada contenedor de página, creamos una página en el PDF
-      for (let i = 0; i < pageContainers.length; i++) {
-        // Si no es la primera página, añadimos una nueva
-        if (i > 0) {
-          pdf.addPage('a4', 'portrait');
-        }
-        
-        // Convertimos el contenedor actual a canvas
-        const canvas = await html2canvas(pageContainers[i], {
-          scale: 3, // Mayor calidad
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          width: 793, // 210mm en píxeles (a 96dpi)
-          height: 1123 // 297mm en píxeles (a 96dpi)
-        });
-        
-        // Añadimos el canvas como imagen al PDF
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        
-        // Usamos las dimensiones exactas de A4 sin márgenes
-        const pageWidth = 210;
-        const pageHeight = 297;
-        
-        // Añadimos la imagen al tamaño exacto de la página
-        pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
-      }
+      // Generar el PDF
+      const pdf = await generatePDF();
       
       // Guardamos el PDF con nombre descriptivo
       const fileName = `Cartones_Bingo_Serie_${seriesInfo.replace(/\s/g, '_')}.pdf`;
@@ -77,6 +36,83 @@ const PrintPage = ({
       message.error('Error al generar el PDF: ' + error.message);
       console.error('Error generando PDF:', error);
     }
+  };
+
+  // Función para generar PDF e imprimirlo directamente
+  const handlePrintPDF = async () => {
+    message.loading('Preparando impresión...', 0);
+    
+    try {
+      // Generar el PDF
+      const pdf = await generatePDF();
+      
+      // Convertir el PDF a una URL de datos para abrirlo en una nueva pestaña
+      const pdfBlob = pdf.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      
+      // Abrir en una nueva pestaña para impresión directa
+      const printWindow = window.open(blobUrl, '_blank');
+      
+      // Esperar a que cargue para ejecutar la impresión
+      printWindow.addEventListener('load', () => {
+        try {
+          printWindow.print();
+          message.destroy();
+        } catch (err) {
+          console.error('Error al imprimir:', err);
+        }
+      });
+      
+      message.destroy();
+    } catch (error) {
+      message.destroy();
+      message.error('Error al preparar la impresión: ' + error.message);
+      console.error('Error preparando la impresión:', error);
+    }
+  };
+
+  // Función auxiliar para generar el PDF
+  const generatePDF = async () => {
+    // Opciones de A4 en jsPDF (210 x 297 mm)
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
+    
+    // Obtenemos todos los grupos de páginas (cada uno con 12 cartones)
+    const pageContainers = document.querySelectorAll('.print-page-container');
+    
+    // Para cada contenedor de página, creamos una página en el PDF
+    for (let i = 0; i < pageContainers.length; i++) {
+      // Si no es la primera página, añadimos una nueva
+      if (i > 0) {
+        pdf.addPage('a4', 'portrait');
+      }
+      
+      // Convertimos el contenedor actual a canvas
+      const canvas = await html2canvas(pageContainers[i], {
+        scale: 3, // Mayor calidad
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+        width: 793, // 210mm en píxeles (a 96dpi)
+        height: 1123 // 297mm en píxeles (a 96dpi)
+      });
+      
+      // Añadimos el canvas como imagen al PDF
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      
+      // Usamos las dimensiones exactas de A4 sin márgenes
+      const pageWidth = 210;
+      const pageHeight = 297;
+      
+      // Añadimos la imagen al tamaño exacto de la página
+      pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
+    }
+    
+    return pdf;
   };
 
   // Función para volver al generador
@@ -140,9 +176,9 @@ const PrintPage = ({
           </Button>
           <Button 
             icon={<PrinterOutlined />} 
-            onClick={handlePrint}
+            onClick={handlePrintPDF}
           >
-            Imprimir
+            Imprimir PDF
           </Button>
         </div>
       </div>
