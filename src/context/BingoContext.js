@@ -110,10 +110,10 @@ export const BingoProvider = ({ children }) => {
 
   // Generar cartones imprimibles (formato español) con una semilla específica
   const generatePrintableCards = (count, seed) => {
-    if (count < 12 || count > 60 || count % 12 !== 0) {
+    if (count < 12 || count > 240 || count % 12 !== 0) {
       notification.error({
         message: 'Error',
-        description: 'La cantidad de cartones debe ser 12, 24, 36, 48 o 60 (múltiplos de 12)',
+        description: 'La cantidad de cartones debe ser múltiplo de 12 (entre 12 y 240)',
       });
       return;
     }

@@ -22,10 +22,10 @@ const GameControls = ({
   const [seed, setSeed] = useState(generateRandomSeriesString());
   
   const handleGenerateCards = () => {
-    if (numCards < 12 || numCards > 60 || numCards % 12 !== 0) {
+    if (numCards < 12 || numCards > 240 || numCards % 12 !== 0) {
       notification.warning({
         message: 'Número de cartones inválido',
-        description: 'Por favor, seleccione 12, 24, 36, 48 o 60 cartones (múltiplos de 12).',
+        description: 'Por favor, seleccione 12, 24, 36, 48, 60, 72, 84, 96, 108, 120, 132, 144, 156, 168, 180, 192, 204, 216, 228 o 240 cartones (múltiplos de 12).',
       });
       return;
     }
@@ -56,8 +56,8 @@ const GameControls = ({
     // Ajustar al múltiplo de 12 más cercano
     const multiple = Math.round(value / 12) * 12;
     
-    // Limitar entre 12 y 60
-    const adjusted = Math.min(Math.max(multiple, 12), 60);
+    // Limitar entre 12 y 240
+    const adjusted = Math.min(Math.max(multiple, 12), 240);
     setNumCards(adjusted);
   };
 
@@ -73,7 +73,7 @@ const GameControls = ({
             <Text>Número de cartones (múltiplos de 12):</Text>
             <InputNumber 
               min={12} 
-              max={60} 
+              max={240} 
               step={12}
               value={numCards}
               onChange={handleNumCardsChange}
@@ -123,7 +123,7 @@ const GameControls = ({
 
         <div style={{ marginTop: 16 }}>
           <Text type="secondary">
-            Puedes generar cartones reglamentarios para imprimir en formato A4 (12 por página).
+            Puedes generar hasta 240 cartones reglamentarios para imprimir en formato A4 (12 por página).
             La serie aparecerá impresa en los cartones y permite regenerarlos exactamente iguales.
           </Text>
         </div>
