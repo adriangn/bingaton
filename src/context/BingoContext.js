@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext } from 'react';
 import { notification } from 'antd';
+import SeededRandom from '../utils/randomGenerator';
 
 // Rangos para el bingo español (formato reglamentario)
 const SPANISH_BINGO_COLUMNS = [
@@ -17,17 +18,8 @@ const SPANISH_BINGO_COLUMNS = [
 // Crear el contexto
 const BingoContext = createContext();
 
-// Generador de número aleatorio en un rango
-const getRandomNumber = (min, max, exclude = []) => {
-  let number;
-  do {
-    number = Math.floor(Math.random() * (max - min + 1)) + min;
-  } while (exclude.includes(number));
-  return number;
-};
-
-// Generar un cartón de bingo en formato español (3x9)
-const generateSpanishBingoCard = () => {
+// Generar un cartón de bingo en formato español (3x9) usando un generador aleatorio con semilla
+const generateSpanishBingoCard = (randomGenerator) => {
   // Matriz 3x9 con todos los valores inicialmente nulos
   const card = Array(3).fill().map(() => Array(9).fill(null));
   
@@ -45,7 +37,7 @@ const generateSpanishBingoCard = () => {
     const selectedRows = [];
     
     for (let i = 0; i < numbersInColumn; i++) {
-      const randomIndex = Math.floor(Math.random() * rows.length);
+      const randomIndex = Math.floor(randomGenerator.next() * rows.length);
       selectedRows.push(rows[randomIndex]);
       rows.splice(randomIndex, 1);
     }
@@ -54,7 +46,7 @@ const generateSpanishBingoCard = () => {
     const usedNumbers = [];
     
     selectedRows.forEach(row => {
-      const num = getRandomNumber(min, max, usedNumbers);
+      const num = randomGenerator.nextIntExcluding(min, max, usedNumbers);
       usedNumbers.push(num);
       card[row][col] = num;
     });
@@ -74,7 +66,7 @@ const generateSpanishBingoCard = () => {
       const toRemove = nonNullCells - 5;
       
       for (let i = 0; i < toRemove; i++) {
-        const randomIdx = Math.floor(Math.random() * indices.length);
+        const randomIdx = Math.floor(randomGenerator.next() * indices.length);
         const colToRemove = indices[randomIdx];
         card[row][colToRemove] = null;
         indices.splice(randomIdx, 1);
@@ -91,7 +83,7 @@ const generateSpanishBingoCard = () => {
       const toAdd = 5 - nonNullCells;
       
       for (let i = 0; i < toAdd; i++) {
-        const randomIdx = Math.floor(Math.random() * nullIndices.length);
+        const randomIdx = Math.floor(randomGenerator.next() * nullIndices.length);
         const colToAdd = nullIndices[randomIdx];
         const { min, max } = SPANISH_BINGO_COLUMNS[colToAdd];
         
@@ -101,7 +93,7 @@ const generateSpanishBingoCard = () => {
           .map(r => card[r][colToAdd])
           .filter(n => n !== null);
         
-        card[row][colToAdd] = getRandomNumber(min, max, usedInCol);
+        card[row][colToAdd] = randomGenerator.nextIntExcluding(min, max, usedInCol);
         nullIndices.splice(randomIdx, 1);
       }
     }
@@ -114,24 +106,33 @@ export const BingoProvider = ({ children }) => {
   // Estado del generador
   const [printableCards, setPrintableCards] = useState([]);
   const [showPrintView, setShowPrintView] = useState(false);
+  const [currentSeed, setCurrentSeed] = useState('');
 
-  // Generar cartones imprimibles (formato español)
-  const generatePrintableCards = (count) => {
-    if (count < 1 || count > 60) {
+  // Generar cartones imprimibles (formato español) con una semilla específica
+  const generatePrintableCards = (count, seed) => {
+    if (count < 12 || count > 60 || count % 12 !== 0) {
       notification.error({
         message: 'Error',
-        description: 'La cantidad de cartones debe estar entre 1 y 60',
+        description: 'La cantidad de cartones debe ser 12, 24, 36, 48 o 60 (múltiplos de 12)',
       });
       return;
     }
 
-    const newCards = Array(count).fill().map(() => generateSpanishBingoCard());
+    // Si no se proporciona semilla, usar la fecha actual como semilla por defecto
+    const seedToUse = seed || String(Date.now());
+    setCurrentSeed(seedToUse);
+    
+    // Crear un generador aleatorio con la semilla dada
+    const randomGenerator = new SeededRandom(seedToUse);
+    
+    // Generar los cartones usando el generador aleatorio con semilla
+    const newCards = Array(count).fill().map(() => generateSpanishBingoCard(randomGenerator));
     setPrintableCards(newCards);
     setShowPrintView(true);
     
     notification.success({
       message: 'Cartones generados',
-      description: `Se han generado ${count} cartones correctamente`,
+      description: `Se han generado ${count} cartones con la semilla: ${seedToUse}`,
     });
   };
 
@@ -139,6 +140,7 @@ export const BingoProvider = ({ children }) => {
   const contextValue = {
     printableCards,
     showPrintView,
+    currentSeed,
     generatePrintableCards,
     setShowPrintView
   };

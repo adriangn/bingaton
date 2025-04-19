@@ -17,7 +17,8 @@ const BingoGame = () => {
   const { 
     printableCards,
     generatePrintableCards,
-    showPrintView
+    showPrintView,
+    currentSeed
   } = useBingo();
 
   // Si hay cartones generados, mostrar la vista de impresión
@@ -25,8 +26,7 @@ const BingoGame = () => {
     return (
       <PrintPage 
         cards={printableCards} 
-        seriesInfo="A-1000000"
-        price="5.00"
+        seriesInfo={currentSeed || "A-1000000"}
         startCardId={1}
       />
     );
@@ -37,6 +37,7 @@ const BingoGame = () => {
     <div className="bingo-game">
       <GameControls 
         onGeneratePrintableCards={generatePrintableCards}
+        currentSeed={currentSeed}
       />
     </div>
   );
@@ -48,21 +49,19 @@ function App() {
     <BingoProvider>
       <Layout className="layout">
         <Header style={{ display: 'flex', alignItems: 'center' }}>
-          <div className="demo-logo" />
+          <div className="logo">Bingaton</div>
           <Menu
             theme="dark"
             mode="horizontal"
             defaultSelectedKeys={['1']}
             items={[
-              { key: '1', label: 'Generador de Cartones' },
-              { key: '2', label: 'Instrucciones' },
-              { key: '3', label: 'Acerca de' }
+              { key: '1', label: 'Generador de Cartones' }
             ]}
           />
         </Header>
         <Content style={{ padding: '0 50px', marginTop: 40 }}>
           <div style={{ padding: 24, background: '#fff', minHeight: 'calc(100vh - 200px)' }}>
-            <Title level={2}>Bingaton - Generador de Cartones de Bingo</Title>
+            <Title level={2}>Generador de Cartones de Bingo</Title>
             <BingoGame />
           </div>
         </Content>

@@ -1,30 +1,82 @@
 import React, { useRef } from 'react';
-import { Button, Typography, Card } from 'antd';
-import { PrinterOutlined, RollbackOutlined } from '@ant-design/icons';
+import { Button, Typography, Card, Tag, message } from 'antd';
+import { PrinterOutlined, RollbackOutlined, FilePdfOutlined } from '@ant-design/icons';
 import PrintableBingoCard from '../PrintableBingoCard';
 import { useBingo } from '../../context/BingoContext';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import './PrintPage.css';
 
-const { Title } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 const PrintPage = ({ 
   cards, 
   seriesInfo = "A-1000000", 
-  price = "5.00",
   startCardId = 1 
 }) => {
   const printRef = useRef();
   const { setShowPrintView } = useBingo();
 
-  // Función para generar un código de seguridad único para cada cartón
-  const generateSecurityCode = (cardId) => {
-    const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `${randomPart}${cardId.toString().padStart(4, '0')}`;
-  };
-
-  // Función para imprimir la página
+  // Función para imprimir la página usando la ventana del navegador
   const handlePrint = () => {
     window.print();
+  };
+
+  // Función para generar PDF en formato A4
+  const handleGeneratePDF = async () => {
+    message.loading('Generando PDF en formato A4...', 0);
+    
+    try {
+      // Opciones de A4 en jsPDF (210 x 297 mm)
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+      
+      // Obtenemos todos los grupos de páginas (cada uno con 12 cartones)
+      const pageContainers = document.querySelectorAll('.print-page-container');
+      
+      // Para cada contenedor de página, creamos una página en el PDF
+      for (let i = 0; i < pageContainers.length; i++) {
+        // Si no es la primera página, añadimos una nueva
+        if (i > 0) {
+          pdf.addPage('a4', 'portrait');
+        }
+        
+        // Convertimos el contenedor actual a canvas
+        const canvas = await html2canvas(pageContainers[i], {
+          scale: 3, // Mayor calidad
+          useCORS: true,
+          logging: false,
+          allowTaint: true,
+          width: 793, // 210mm en píxeles (a 96dpi)
+          height: 1123 // 297mm en píxeles (a 96dpi)
+        });
+        
+        // Añadimos el canvas como imagen al PDF
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        
+        // Usamos las dimensiones exactas de A4 sin márgenes
+        const pageWidth = 210;
+        const pageHeight = 297;
+        
+        // Añadimos la imagen al tamaño exacto de la página
+        pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
+      }
+      
+      // Guardamos el PDF con nombre descriptivo
+      const fileName = `Cartones_Bingo_Serie_${seriesInfo.replace(/\s/g, '_')}.pdf`;
+      pdf.save(fileName);
+      
+      message.destroy();
+      message.success('PDF generado correctamente');
+    } catch (error) {
+      message.destroy();
+      message.error('Error al generar el PDF: ' + error.message);
+      console.error('Error generando PDF:', error);
+    }
   };
 
   // Función para volver al generador
@@ -32,9 +84,9 @@ const PrintPage = ({
     setShowPrintView(false);
   };
 
-  // Renderizar cartones en grupos de 6 (para un A4)
+  // Renderizar cartones en grupos de 12 (para un A4)
   const renderCardGroups = () => {
-    const cardsPerPage = 6;
+    const cardsPerPage = 12;
     const pagesCount = Math.ceil(cards.length / cardsPerPage);
     const pages = [];
 
@@ -50,8 +102,6 @@ const PrintPage = ({
               cardData={card}
               cardId={startCardId + startIndex + index}
               seriesInfo={seriesInfo}
-              price={price}
-              securityCode={generateSecurityCode(startCardId + startIndex + index)}
             />
           ))}
         </div>
@@ -64,8 +114,15 @@ const PrintPage = ({
   return (
     <Card className="print-page-card">
       <div className="print-header">
-        <Title level={3}>Vista previa de impresión</Title>
         <div>
+          <Title level={3}>Vista previa de impresión</Title>
+          <Paragraph>
+            <Text>Serie de los cartones: </Text>
+            <Tag color="blue">{seriesInfo}</Tag>
+            <Text type="secondary"> (Esta serie se usa como semilla para generar los cartones)</Text>
+          </Paragraph>
+        </div>
+        <div className="print-actions">
           <Button 
             style={{ marginRight: 10 }}
             onClick={handleBackToGenerator}
@@ -75,10 +132,17 @@ const PrintPage = ({
           </Button>
           <Button 
             type="primary" 
+            icon={<FilePdfOutlined />} 
+            onClick={handleGeneratePDF}
+            style={{ marginRight: 10 }}
+          >
+            Generar PDF (A4)
+          </Button>
+          <Button 
             icon={<PrinterOutlined />} 
             onClick={handlePrint}
           >
-            Imprimir Cartones
+            Imprimir
           </Button>
         </div>
       </div>
@@ -86,7 +150,7 @@ const PrintPage = ({
       <div className="print-instructions">
         <p>
           Se han generado {cards.length} cartones de bingo según el formato reglamentario europeo (3x9).
-          Los cartones se imprimirán en hojas A4, con 6 cartones por página.
+          Los cartones se imprimirán en hojas A4, con 12 cartones por página (6x2), perfectamente alineados para cortar siguiendo las marcas de corte de las esquinas.
         </p>
       </div>
 

@@ -1,78 +1,245 @@
 .print-card {
-  width: 280px;
-  height: 140px;
-  margin: 8px;
-  padding: 4px !important;
-  border: 1px solid #000 !important;
+  width: 105mm;  /* Ancho A4 (210mm) / 2 */
+  height: 49.5mm; /* Alto A4 (297mm) / 6 */
+  margin: 0;
+  padding: 0 !important;
+  border: none !important;
   box-shadow: none !important;
   page-break-inside: avoid;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
 }
 
-/* Ajustamos los márgenes y paddings para maximizar el espacio */
+/* Contenido interno del cartón (más pequeño que las marcas de corte) */
 .print-card .ant-card-body {
-  padding: 6px !important;
+  padding: 2px !important;
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 4px);
+  overflow: hidden;
+  border: none;
+  margin: 1.5mm;
+  width: calc(100% - 3mm);
+  height: calc(100% - 3mm);
+  background-color: white;
+}
+
+/* Marcas de corte en las esquinas */
+.print-card::before,
+.print-card::after,
+.print-card .corner-top-right,
+.print-card .corner-bottom-left {
+  content: "";
+  position: absolute;
+  width: 4mm;
+  height: 4mm;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Esquina superior izquierda */
+.print-card::before {
+  top: 0;
+  left: 0;
+  border-top: 0.5mm solid #000;
+  border-left: 0.5mm solid #000;
+}
+
+/* Esquina inferior derecha */
+.print-card::after {
+  bottom: 0;
+  right: 0;
+  border-bottom: 0.5mm solid #000;
+  border-right: 0.5mm solid #000;
+}
+
+/* Esquina superior derecha */
+.print-card .corner-top-right {
+  top: 0;
+  right: 0;
+  border-top: 0.5mm solid #000;
+  border-right: 0.5mm solid #000;
+}
+
+/* Esquina inferior izquierda */
+.print-card .corner-bottom-left {
+  bottom: 0;
+  left: 0;
+  border-bottom: 0.5mm solid #000;
+  border-left: 0.5mm solid #000;
 }
 
 .print-card-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 2px;
-  font-size: 9px;
+  margin-bottom: 0;
+  font-size: 6px;
+  flex: 0 0 auto;
+  padding: 0 1mm;
+}
+
+.print-card-number {
+  text-align: left;
+  font-weight: bold;
+}
+
+.print-card-series {
+  text-align: right;
+  font-weight: bold;
 }
 
 .print-divider {
-  margin: 3px 0 !important;
+  margin: 0 !important;
+  flex: 0 0 auto;
 }
 
 .print-card-grid {
+  flex: 0.95; /* Aumentado para dar más espacio a la tabla */
   display: flex;
   flex-direction: column;
-  height: 75px;
+  overflow: hidden;
 }
 
-.print-card-row {
+.logo-space {
+  flex: 0.05; /* Reducido para que ocupe menos espacio */
   display: flex;
-  flex: 1;
+  justify-content: center;
+  align-items: center;
+  font-size: 6px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  margin-top: 0;
+  color: #1677FF;
 }
 
-.print-card-cell {
+.bingo-table {
+  width: 100%;
+  margin-top: 0;
+  border-collapse: collapse;
+  border: 1px solid #000;
+  table-layout: fixed;
+}
+
+.bingo-table tr {
+  height: 33%; /* Volver a aumentar la altura de las filas */
+}
+
+.bingo-table td {
+  border: 1px solid #000;
+  text-align: center;
+  vertical-align: middle;
+  font-weight: bold;
+  font-size: 12px;
+  width: 11.11%;
+  position: relative;
+  padding: 0;
+}
+
+/* Técnica para celdas más cercanas a cuadrados */
+.bingo-table td:before {
+  content: "";
+  display: block;
+  padding-top: 100%; /* Vuelto al 100% para celdas perfectamente cuadradas */
+}
+
+.cell-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-weight: bold;
-  border: 1px solid #000;
-  margin: 1px;
-  flex: 1;
-  font-size: 14px;
 }
 
-.print-card-footer {
+/* Ajustamos el tamaño del contenido dentro de las celdas */
+.bingo-table td span, 
+.bingo-table td .globe-icon {
   display: flex;
-  justify-content: space-between;
-  font-size: 8px;
-  margin-top: 2px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
-.barcode-container {
-  font-family: 'Courier New', monospace;
-  font-size: 9px;
-  letter-spacing: -0.5px;
-  font-weight: bold;
+/* Eliminamos el truco anterior que causaba el desbordamiento */
+.bingo-table td::after {
+  display: none;
 }
 
-/* Estilos específicos para la impresión */
+/* Estilo para el icono de globo */
+.globe-icon {
+  font-size: 13px;
+  color: #222;
+}
+
+/* Estilo para las casillas sin número (con globo) */
+.empty-cell {
+  background-color: rgba(22, 119, 255, 0.1); /* Color de acento con opacidad baja */
+}
+
+/* Media query para impresión */
 @media print {
-  .print-card {
-    break-inside: avoid;
-    box-shadow: none !important;
-    border: 1px solid #000 !important;
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   
+  .print-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin: 0;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  .print-card .ant-card-body {
+    border: none !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Aseguramos que las marcas de corte aparecen en la impresión */
+  .print-card::before,
+  .print-card::after,
+  .print-card .corner-top-right,
+  .print-card .corner-bottom-left {
+    color: black !important;
+    border-color: black !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Aseguramos que los contenedores de página se impriman correctamente */
   .print-page-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-gap: 5mm;
     page-break-after: always;
+    break-after: page;
+  }
+  
+  /* Última página no necesita salto de página */
+  .print-page-container:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  
+  /* Mejoras para la impresión */
+  .bingo-table {
+    border: 1px solid black !important;
+    border-collapse: collapse;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .bingo-table td {
+    border: 1px solid black !important;
+    margin: 0;
+    padding: 0;
   }
 } 

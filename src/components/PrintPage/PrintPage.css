@@ -9,6 +9,12 @@
   margin-bottom: 16px;
 }
 
+.print-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .print-instructions {
   margin-bottom: 24px;
   padding: 12px;
@@ -18,8 +24,34 @@
 
 .print-preview {
   display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Contenedor para cada página A4 */
+.print-page-container {
+  display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
+  align-content: flex-start;
+  background-color: white;
+  width: 210mm; /* Ancho exacto A4 */
+  height: 297mm; /* Alto exacto A4 */
+  padding: 0; /* Sin margen interior */
+  margin: 0 auto 20px;
+  box-sizing: border-box;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  page-break-after: always;
+  break-after: page;
+  gap: 0; /* Sin espacio entre cartones */
+  overflow: hidden; /* Evitar desbordamiento */
+}
+
+/* Eliminar márgenes extra del último contenedor */
+.print-page-container:last-child {
+  margin-bottom: 0;
+  page-break-after: auto;
+  break-after: auto;
 }
 
 /* Configuración de página de impresión */
@@ -30,7 +62,9 @@
   }
   
   .print-preview, 
-  .print-preview * {
+  .print-preview *,
+  .print-page-container,
+  .print-page-container * {
     visibility: visible;
   }
   
@@ -41,9 +75,20 @@
     width: 100%;
   }
   
+  /* Eliminar sombras y márgenes para impresión */
+  .print-page-container {
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    width: 210mm;
+    height: 297mm;
+    page-break-after: always;
+    break-after: page;
+  }
+  
   /* Configuración de la página */
   @page {
     size: A4;
-    margin: 10mm;
+    margin: 0;
   }
 } 
