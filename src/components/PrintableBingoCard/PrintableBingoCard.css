@@ -105,12 +105,17 @@
 .logo-space {
   flex: 0.05; /* Reducido para que ocupe menos espacio */
   display: flex;
-  justify-content: center;
+  justify-content: flex-start; 
   align-items: center;
   font-size: 6px;
   font-weight: bold;
   letter-spacing: 0.5px;
   margin-top: 0;
+  padding-left: 1mm; /* Pequeño padding para no quedar pegado al borde */
+  margin-left: 0;
+  text-align: left;
+  background-color: #FBFBFB; /* Fondo ligeramente gris para mejorar contraste */
+  border-radius: 2px; /* Borde redondeado para mejor apariencia */
   color: #1677FF;
 }
 
