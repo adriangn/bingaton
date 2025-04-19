@@ -1,0 +1,78 @@
+.print-card {
+  width: 280px;
+  height: 140px;
+  margin: 8px;
+  padding: 4px !important;
+  border: 1px solid #000 !important;
+  box-shadow: none !important;
+  page-break-inside: avoid;
+}
+
+/* Ajustamos los márgenes y paddings para maximizar el espacio */
+.print-card .ant-card-body {
+  padding: 6px !important;
+}
+
+.print-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+  font-size: 9px;
+}
+
+.print-divider {
+  margin: 3px 0 !important;
+}
+
+.print-card-grid {
+  display: flex;
+  flex-direction: column;
+  height: 75px;
+}
+
+.print-card-row {
+  display: flex;
+  flex: 1;
+}
+
+.print-card-cell {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  border: 1px solid #000;
+  margin: 1px;
+  flex: 1;
+  font-size: 14px;
+}
+
+.print-card-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  margin-top: 2px;
+}
+
+.barcode-container {
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: -0.5px;
+  font-weight: bold;
+}
+
+/* Estilos específicos para la impresión */
+@media print {
+  .print-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+  }
+  
+  .print-page-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 5mm;
+    page-break-after: always;
+  }
+} 

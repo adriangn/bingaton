@@ -1,11 +1,12 @@
 import React from 'react';
-import { Layout, Menu, Row, Col, Typography } from 'antd';
+import { Layout, Menu, Row, Col, Typography, Button } from 'antd';
 import './App.css';
 
 // Importar componentes del juego
 import BingoCard from './components/BingoCard';
 import BingoBoard from './components/BingoBoard';
 import GameControls from './components/GameControls';
+import PrintPage from './components/PrintPage';
 
 // Importar el contexto
 import { BingoProvider, useBingo } from './context/BingoContext';
@@ -17,16 +18,20 @@ const { Title } = Typography;
 const BingoGame = () => {
   const { 
     cards, 
+    printableCards,
     drawnNumbers, 
     lastNumber, 
     gameStarted, 
     gameEnded,
     markedNumbers,
     generateCards,
+    generatePrintableCards,
     startGame,
     drawNumber,
     resetGame,
-    markNumber
+    markNumber,
+    showPrintView,
+    setShowPrintView
   } = useBingo();
 
   // Renderizar cartones de bingo
@@ -43,12 +48,37 @@ const BingoGame = () => {
     ));
   };
 
+  const handleBackToGame = () => {
+    setShowPrintView(false);
+  };
+
+  // Si estamos en la vista de impresión, mostrar los cartones imprimibles
+  if (showPrintView) {
+    return (
+      <div>
+        <div className="back-to-game">
+          <Button type="primary" onClick={handleBackToGame}>
+            Volver al Juego
+          </Button>
+        </div>
+        <PrintPage 
+          cards={printableCards} 
+          seriesInfo="A-1000000"
+          price="5.00"
+          startCardId={1}
+        />
+      </div>
+    );
+  }
+
+  // De lo contrario, mostrar la vista normal del juego
   return (
     <div className="bingo-game">
       <GameControls 
         onStartGame={startGame}
         onDrawNumber={drawNumber}
         onGenerateCards={generateCards}
+        onGeneratePrintableCards={generatePrintableCards}
         onResetGame={resetGame}
         gameStarted={gameStarted}
         gameEnded={gameEnded}
