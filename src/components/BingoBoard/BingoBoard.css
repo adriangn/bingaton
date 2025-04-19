@@ -1,0 +1,78 @@
+.bingo-board {
+  margin-bottom: 24px;
+}
+
+.last-number-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.last-number {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: #1677ff;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.last-number.animated {
+  animation: pop 0.5s ease-out;
+}
+
+.bingo-letter {
+  font-size: 24px;
+}
+
+.number-value {
+  font-size: 36px;
+}
+
+.drawn-numbers {
+  margin-top: 24px;
+}
+
+.column-card {
+  height: 100%;
+}
+
+.column-numbers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.drawn-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+} 
