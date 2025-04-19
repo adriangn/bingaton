@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
-import { Button, Typography, Row, Col, Card } from 'antd';
-import { PrinterOutlined } from '@ant-design/icons';
+import { Button, Typography, Card } from 'antd';
+import { PrinterOutlined, RollbackOutlined } from '@ant-design/icons';
 import PrintableBingoCard from '../PrintableBingoCard';
+import { useBingo } from '../../context/BingoContext';
 import './PrintPage.css';
 
 const { Title } = Typography;
@@ -13,6 +14,7 @@ const PrintPage = ({
   startCardId = 1 
 }) => {
   const printRef = useRef();
+  const { setShowPrintView } = useBingo();
 
   // Función para generar un código de seguridad único para cada cartón
   const generateSecurityCode = (cardId) => {
@@ -23,6 +25,11 @@ const PrintPage = ({
   // Función para imprimir la página
   const handlePrint = () => {
     window.print();
+  };
+
+  // Función para volver al generador
+  const handleBackToGenerator = () => {
+    setShowPrintView(false);
   };
 
   // Renderizar cartones en grupos de 6 (para un A4)
@@ -58,18 +65,27 @@ const PrintPage = ({
     <Card className="print-page-card">
       <div className="print-header">
         <Title level={3}>Vista previa de impresión</Title>
-        <Button 
-          type="primary" 
-          icon={<PrinterOutlined />} 
-          onClick={handlePrint}
-        >
-          Imprimir Cartones
-        </Button>
+        <div>
+          <Button 
+            style={{ marginRight: 10 }}
+            onClick={handleBackToGenerator}
+            icon={<RollbackOutlined />}
+          >
+            Volver al Generador
+          </Button>
+          <Button 
+            type="primary" 
+            icon={<PrinterOutlined />} 
+            onClick={handlePrint}
+          >
+            Imprimir Cartones
+          </Button>
+        </div>
       </div>
 
       <div className="print-instructions">
         <p>
-          Se generarán {cards.length} cartones de bingo según el formato reglamentario.
+          Se han generado {cards.length} cartones de bingo según el formato reglamentario europeo (3x9).
           Los cartones se imprimirán en hojas A4, con 6 cartones por página.
         </p>
       </div>

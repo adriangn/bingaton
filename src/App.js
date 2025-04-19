@@ -1,10 +1,8 @@
 import React from 'react';
-import { Layout, Menu, Row, Col, Typography, Button } from 'antd';
+import { Layout, Menu, Typography } from 'antd';
 import './App.css';
 
 // Importar componentes del juego
-import BingoCard from './components/BingoCard';
-import BingoBoard from './components/BingoBoard';
 import GameControls from './components/GameControls';
 import PrintPage from './components/PrintPage';
 
@@ -17,82 +15,29 @@ const { Title } = Typography;
 // Componente principal de la aplicación
 const BingoGame = () => {
   const { 
-    cards, 
     printableCards,
-    drawnNumbers, 
-    lastNumber, 
-    gameStarted, 
-    gameEnded,
-    markedNumbers,
-    generateCards,
     generatePrintableCards,
-    startGame,
-    drawNumber,
-    resetGame,
-    markNumber,
-    showPrintView,
-    setShowPrintView
+    showPrintView
   } = useBingo();
 
-  // Renderizar cartones de bingo
-  const renderBingoCards = () => {
-    return cards.map((card, index) => (
-      <Col key={index} xs={24} sm={12} md={8} lg={6}>
-        <BingoCard 
-          cardData={card} 
-          cardId={index + 1} 
-          markedNumbers={markedNumbers[index] || []}
-          onNumberClick={markNumber}
-        />
-      </Col>
-    ));
-  };
-
-  const handleBackToGame = () => {
-    setShowPrintView(false);
-  };
-
-  // Si estamos en la vista de impresión, mostrar los cartones imprimibles
-  if (showPrintView) {
+  // Si hay cartones generados, mostrar la vista de impresión
+  if (showPrintView && printableCards.length > 0) {
     return (
-      <div>
-        <div className="back-to-game">
-          <Button type="primary" onClick={handleBackToGame}>
-            Volver al Juego
-          </Button>
-        </div>
-        <PrintPage 
-          cards={printableCards} 
-          seriesInfo="A-1000000"
-          price="5.00"
-          startCardId={1}
-        />
-      </div>
+      <PrintPage 
+        cards={printableCards} 
+        seriesInfo="A-1000000"
+        price="5.00"
+        startCardId={1}
+      />
     );
   }
 
-  // De lo contrario, mostrar la vista normal del juego
+  // De lo contrario, mostrar el formulario de generación
   return (
     <div className="bingo-game">
       <GameControls 
-        onStartGame={startGame}
-        onDrawNumber={drawNumber}
-        onGenerateCards={generateCards}
         onGeneratePrintableCards={generatePrintableCards}
-        onResetGame={resetGame}
-        gameStarted={gameStarted}
-        gameEnded={gameEnded}
-        cardCount={cards.length}
       />
-
-      <BingoBoard 
-        drawnNumbers={drawnNumbers} 
-        lastNumber={lastNumber}
-      />
-
-      <Row gutter={[16, 16]}>
-        {renderBingoCards()}
-      </Row>
     </div>
   );
 };
@@ -109,7 +54,7 @@ function App() {
             mode="horizontal"
             defaultSelectedKeys={['1']}
             items={[
-              { key: '1', label: 'Bingo Game' },
+              { key: '1', label: 'Generador de Cartones' },
               { key: '2', label: 'Instrucciones' },
               { key: '3', label: 'Acerca de' }
             ]}
@@ -117,7 +62,7 @@ function App() {
         </Header>
         <Content style={{ padding: '0 50px', marginTop: 40 }}>
           <div style={{ padding: 24, background: '#fff', minHeight: 'calc(100vh - 200px)' }}>
-            <Title level={2}>Bingaton - Juego de Bingo</Title>
+            <Title level={2}>Bingaton - Generador de Cartones de Bingo</Title>
             <BingoGame />
           </div>
         </Content>
