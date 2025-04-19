@@ -41,26 +41,7 @@
   min-height: 100vh;
 }
 
-.logo {
-  float: left;
-  width: 120px;
-  height: 31px;
-  margin: 16px 24px 16px 0;
-  font-weight: bold;
-  font-size: 22px;
-  display: flex;
-  align-items: center;
-  background-image: linear-gradient(to right, #FF8C00, #FFD700, #4CAF50, #2196F3);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-}
-
-.ant-row-rtl .logo {
-  float: right;
-  margin: 16px 0 16px 24px;
-}
+/* Los estilos del logo se han movido al componente Logo */
 
 .back-to-game {
   margin-bottom: 20px;
