@@ -10,6 +10,15 @@
   cursor: pointer;
 }
 
+/* Versión para impresión con color sólido */
+.bingaton-logo.print-version {
+  background-image: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  color: #2980B9; /* Azul sólido para mejor visualización */
+  -webkit-text-fill-color: #2980B9;
+}
+
 /* Tamaño por defecto (para la barra de navegación) */
 .logo-default {
   float: left;

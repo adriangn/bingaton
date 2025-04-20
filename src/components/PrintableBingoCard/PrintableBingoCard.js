@@ -52,7 +52,7 @@ const PrintableBingoCard = ({
       
       {/* Espacio para el logo */}
       <div className="logo-space">
-        <Logo size="small" />
+        <Logo size="small" printVersion={true} />
       </div>
     </Card>
   );
