@@ -17,7 +17,6 @@
   padding: 2px !important;
   display: flex;
   flex-direction: column;
-  height: calc(100% - 4px);
   overflow: hidden;
   border: none;
   margin: 1.5mm;
@@ -114,7 +113,7 @@
   padding-left: 1mm; /* Pequeño padding para no quedar pegado al borde */
   margin-left: 0;
   text-align: left;
-  background-color: #FBFBFB; /* Fondo ligeramente gris para mejorar contraste */
+  background-color: white; /* Cambiado de #FBFBFB a blanco */
   border-radius: 2px; /* Borde redondeado para mejor apariencia */
   color: #1677FF;
 }
@@ -183,7 +182,7 @@
 
 /* Estilo para las casillas sin número (con globo) */
 .empty-cell {
-  background-color: rgba(22, 119, 255, 0.1); /* Color de acento con opacidad baja */
+  background-color: rgba(255, 255, 255, 0.9); /* Cambiado a blanco con ligera transparencia en lugar de color azulado */
 }
 
 /* Media query para impresión */

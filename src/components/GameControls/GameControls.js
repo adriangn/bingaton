@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, Button, InputNumber, Space, Typography, notification, Input, Tooltip } from 'antd';
 import { PrinterOutlined, InfoCircleOutlined, RedoOutlined } from '@ant-design/icons';
 import './GameControls.css';
