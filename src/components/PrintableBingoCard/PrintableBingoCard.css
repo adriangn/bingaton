@@ -19,9 +19,9 @@
   flex-direction: column;
   overflow: hidden;
   border: none;
-  margin: 1.5mm;
-  width: calc(100% - 3mm);
-  height: calc(100% - 3mm);
+  margin: 2.5mm; /* Aumentado de 1.5mm a 2.5mm para reducir el contenido interno */
+  width: calc(100% - 5mm); /* Ajustado de 3mm a 5mm para considerar los márgenes */
+  height: calc(100% - 5mm); /* Ajustado de 3mm a 5mm para considerar los márgenes */
   background-color: white;
 }
 
@@ -74,9 +74,11 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 0;
-  font-size: 6px;
+  font-size: 5px; /* Reducido de 6px a 5px */
   flex: 0 0 auto;
-  padding: 0 1mm;
+  padding: 0;
+  width: calc(92% - 2mm); /* Ajustado para compensar el padding de la tabla */
+  margin: 0 auto; /* Centrado como la tabla */
 }
 
 .print-card-number {
@@ -92,34 +94,41 @@
 .print-divider {
   margin: 0 !important;
   flex: 0 0 auto;
+  border-color: transparent !important; /* Hacemos el divisor invisible */
+  display: none; /* Ocultamos completamente el divisor */
 }
 
 .print-card-grid {
-  flex: 0.95; /* Aumentado para dar más espacio a la tabla */
+  flex: 0.95;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding: 1mm; /* Añadido padding alrededor de la tabla */
+  box-sizing: border-box;
 }
 
 .logo-space {
-  flex: 0.05; /* Reducido para que ocupe menos espacio */
+  flex: 0.05;
   display: flex;
   justify-content: flex-start; 
   align-items: center;
-  font-size: 6px;
+  font-size: 5px; /* Reducido de 6px a 5px */
   font-weight: bold;
   letter-spacing: 0.5px;
   margin-top: 0;
-  padding-left: 1mm; /* Pequeño padding para no quedar pegado al borde */
+  padding-left: 0;
   margin-left: 0;
+  width: calc(92% - 2mm); /* Ajustado para compensar el padding de la tabla */
+  margin: 0 auto; /* Centrado como la tabla */
   text-align: left;
-  background-color: white; /* Cambiado de #FBFBFB a blanco */
-  border-radius: 2px; /* Borde redondeado para mejor apariencia */
+  background-color: white;
+  border-radius: 2px;
   color: #1677FF;
 }
 
 .bingo-table {
-  width: 100%;
+  width: 92%; /* Reducido de 100% a 92% */
+  margin: 0 auto; /* Centrado horizontalmente */
   margin-top: 0;
   border-collapse: collapse;
   border: 1px solid #000;
@@ -135,7 +144,7 @@
   text-align: center;
   vertical-align: middle;
   font-weight: bold;
-  font-size: 12px;
+  font-size: 13px; /* Aumentado de 11px a 13px */
   width: 11.11%;
   position: relative;
   padding: 0;
@@ -157,6 +166,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  font-weight: bold; /* Hacemos los números más negrita */
 }
 
 /* Ajustamos el tamaño del contenido dentro de las celdas */
@@ -167,6 +177,7 @@
   align-items: center;
   width: 100%;
   height: 100%;
+  line-height: 1; /* Mejora la alineación vertical */
 }
 
 /* Eliminamos el truco anterior que causaba el desbordamiento */
@@ -176,7 +187,7 @@
 
 /* Estilo para el icono de globo */
 .globe-icon {
-  font-size: 13px;
+  font-size: 14px; /* Aumentado de 12px a 14px */
   color: #222;
 }
 
@@ -237,13 +248,18 @@
   .bingo-table {
     border: 1px solid black !important;
     border-collapse: collapse;
-    margin: 0;
+    margin: 0 auto !important; /* Aseguramos que se mantenga centrado en la impresión */
     padding: 0;
+    width: 92% !important; /* Aseguramos que mantenga el ancho reducido en la impresión */
   }
   
   .bingo-table td {
     border: 1px solid black !important;
     margin: 0;
     padding: 0;
+  }
+  
+  .print-divider {
+    display: none !important; /* Aseguramos que el divisor no aparezca en la impresión */
   }
 } 
