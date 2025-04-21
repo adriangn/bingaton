@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { notification } from 'antd';
 import SeededRandom from '../utils/randomGenerator';
 
@@ -108,6 +108,108 @@ export const BingoProvider = ({ children }) => {
   const [showPrintView, setShowPrintView] = useState(false);
   const [currentSeed, setCurrentSeed] = useState('');
 
+  // Estado del juego de bingo
+  const [gameActive, setGameActive] = useState(false);
+  const [extractedNumbers, setExtractedNumbers] = useState([]);
+  const [currentNumber, setCurrentNumber] = useState(null);
+  const [remainingNumbers, setRemainingNumbers] = useState([]);
+  const [intervalTime, setIntervalTime] = useState(5); // segundos entre cada número
+  const [gameStatus, setGameStatus] = useState('idle'); // 'idle', 'running', 'paused', 'finished'
+
+  // Estado para validación de cartones
+  const [validationResult, setValidationResult] = useState(null);
+  const [isValidating, setIsValidating] = useState(false);
+
+  // Estado de configuración
+  const [voiceConfig, setVoiceConfig] = useState({
+    rate: 0.9,          // Velocidad de habla (0.1 a 2)
+    volume: 1.0,        // Volumen (0 a 1)
+    enabled: true,      // Habilitar/deshabilitar el sonido
+    announceDigits: true // Anunciar dígitos individualmente
+  });
+
+  // Referencias para los temporizadores
+  const intervalRef = useRef(null);
+  const speechTimeoutRef = useRef(null);
+  
+  // Referencia para la síntesis de voz
+  const speechSynthRef = useRef(null);
+
+  // Efecto para limpiar el intervalo cuando el componente se desmonta
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      if (speechTimeoutRef.current) {
+        clearTimeout(speechTimeoutRef.current);
+      }
+      if (speechSynthRef.current) {
+        speechSynthRef.current.cancel();
+      }
+    };
+  }, []);
+
+  // Inicializar la síntesis de voz - versión simplificada
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      speechSynthRef.current = window.speechSynthesis;
+    }
+  }, []);
+
+  // Función para leer el número en voz alta - versión configurable
+  const speakNumber = useCallback((number) => {
+    // Si el sonido está deshabilitado, no hacer nada
+    if (!speechSynthRef.current || !voiceConfig.enabled) return;
+    
+    // Limpiar cualquier timeout pendiente
+    if (speechTimeoutRef.current) {
+      clearTimeout(speechTimeoutRef.current);
+      speechTimeoutRef.current = null;
+    }
+    
+    // Detener cualquier lectura en curso
+    speechSynthRef.current.cancel();
+    
+    // Crear un nuevo mensaje con un pequeño retraso
+    speechTimeoutRef.current = setTimeout(() => {
+      // Primero crear un utterance para el número completo
+      const utteranceNumber = new SpeechSynthesisUtterance();
+      utteranceNumber.text = `${number}`;
+      utteranceNumber.lang = 'es-ES';
+      utteranceNumber.rate = voiceConfig.rate;
+      utteranceNumber.volume = voiceConfig.volume;
+      
+      // Reproducir el número completo
+      speechSynthRef.current.speak(utteranceNumber);
+      
+      // Si está habilitado anunciar dígitos y es un número de más de un dígito
+      if (voiceConfig.announceDigits && number >= 10) {
+        const numberAsText = number.toString();
+        const digitsText = numberAsText.split('').join(', ');
+        
+        // Crear un timeout para hablar los dígitos después de 1.2 segundos
+        const digitsTimeoutRef = setTimeout(() => {
+          // Comprobar si la síntesis de voz sigue disponible
+          if (!speechSynthRef.current) return;
+          
+          // Crear utterance para los dígitos
+          const utteranceDigits = new SpeechSynthesisUtterance();
+          utteranceDigits.text = digitsText;
+          utteranceDigits.lang = 'es-ES';
+          utteranceDigits.rate = voiceConfig.rate;
+          utteranceDigits.volume = voiceConfig.volume;
+          
+          // Reproducir los dígitos
+          speechSynthRef.current.speak(utteranceDigits);
+        }, 1200); // Pausa de 1.2 segundos entre número y dígitos
+        
+        // Limpiar este timeout en caso de desmontaje
+        return () => clearTimeout(digitsTimeoutRef);
+      }
+    }, 100);
+  }, [voiceConfig]);
+
   // Generar cartones imprimibles (formato español) con una semilla específica
   const generatePrintableCards = (count, seed) => {
     if (count < 12 || count > 240 || count % 12 !== 0) {
@@ -136,13 +238,305 @@ export const BingoProvider = ({ children }) => {
     });
   };
 
+  // Pausar la partida - definido antes de extractNextNumber para evitar errores
+  const pauseGame = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    setGameStatus('paused');
+    
+    notification.info({
+      message: 'Partida pausada',
+      description: 'Se ha pausado la extracción de números',
+    });
+  }, []);
+
+  // Extraer el siguiente número - ahora con useCallback
+  const extractNextNumber = useCallback(() => {
+    setRemainingNumbers(prevRemaining => {
+      if (prevRemaining.length === 0) {
+        pauseGame();
+        setGameStatus('finished');
+        notification.info({
+          message: 'Partida finalizada',
+          description: 'Se han extraído todos los números (1-90)',
+        });
+        return [];
+      }
+      
+      // Sacar el primer número del array de números restantes
+      const nextNumber = prevRemaining[0];
+      
+      // Leer el número en voz alta
+      speakNumber(nextNumber);
+      
+      // Actualizar otros estados
+      setCurrentNumber(nextNumber);
+      setExtractedNumbers(prevExtracted => [...prevExtracted, nextNumber]);
+      
+      // Devolver los números restantes actualizados
+      return prevRemaining.slice(1);
+    });
+  }, [pauseGame, speakNumber]);
+
+  // Iniciar la extracción automática de números
+  const startNumberExtraction = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    
+    // Sacar el primer número inmediatamente
+    extractNextNumber();
+    
+    // Configurar el intervalo para sacar números automáticamente
+    intervalRef.current = setInterval(() => {
+      extractNextNumber();
+    }, intervalTime * 1000);
+    
+    setGameStatus('running');
+  }, [extractNextNumber, intervalTime]);
+
+  // Reanudar la partida
+  const resumeGame = useCallback(() => {
+    startNumberExtraction();
+    
+    notification.success({
+      message: 'Partida reanudada',
+      description: 'Se ha reanudado la extracción de números',
+    });
+  }, [startNumberExtraction]);
+  
+  // Iniciar una nueva partida de bingo
+  const startNewGame = useCallback(() => {
+    // Generar un array con todos los números posibles (1-90)
+    const allNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
+    
+    // Desordenar el array para simular el bombo
+    const shuffledNumbers = [...allNumbers];
+    for (let i = shuffledNumbers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledNumbers[i], shuffledNumbers[j]] = [shuffledNumbers[j], shuffledNumbers[i]];
+    }
+    
+    setRemainingNumbers(shuffledNumbers);
+    setExtractedNumbers([]);
+    setCurrentNumber(null);
+    setGameStatus('running');
+    setGameActive(true);
+    
+    // Iniciar la extracción automática de números
+    setTimeout(() => {
+      startNumberExtraction();
+    }, 100);
+    
+    notification.success({
+      message: 'Partida iniciada',
+      description: 'Se ha iniciado una nueva partida de bingo',
+    });
+  }, [startNumberExtraction]);
+
+  // Terminar la partida
+  const endGame = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    setGameStatus('idle');
+    setGameActive(false);
+    setCurrentNumber(null);
+    
+    notification.info({
+      message: 'Partida terminada',
+      description: 'Se ha terminado la partida actual',
+    });
+  }, []);
+
+  // Cambiar el intervalo de tiempo entre números
+  const changeIntervalTime = useCallback((seconds) => {
+    setIntervalTime(seconds);
+    
+    // Si el juego está en marcha, reiniciar el intervalo con el nuevo tiempo
+    if (gameStatus === 'running') {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      
+      intervalRef.current = setInterval(() => {
+        extractNextNumber();
+      }, seconds * 1000);
+    }
+  }, [extractNextNumber, gameStatus]);
+
+  // Efecto para limpiar el intervalo cuando cambie intervalTime
+  useEffect(() => {
+    // Solo actualizar si ya estamos corriendo
+    if (gameStatus === 'running' && intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(extractNextNumber, intervalTime * 1000);
+    }
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [intervalTime, extractNextNumber, gameStatus]);
+
+  // Función para actualizar la configuración de voz
+  const updateVoiceConfig = useCallback((newConfig) => {
+    setVoiceConfig(prevConfig => ({
+      ...prevConfig,
+      ...newConfig
+    }));
+  }, []);
+
+  // Generar un cartón específico usando una semilla y número de cartón
+  const generateSpecificCard = useCallback((seed, cardNumber) => {
+    if (!seed || cardNumber < 1) {
+      return null;
+    }
+    
+    // Crear un generador con la semilla específica
+    const randomGenerator = new SeededRandom(seed);
+    
+    // Generar cartones hasta llegar al número deseado
+    let card = null;
+    for (let i = 1; i <= cardNumber; i++) {
+      card = generateSpanishBingoCard(randomGenerator);
+    }
+    
+    return card;
+  }, []);
+
+  // Verificar si una fila tiene línea (5 números marcados)
+  const checkLine = useCallback((cardRow, extractedNums) => {
+    // Filtrar los números no nulos de la fila
+    const numbers = cardRow.filter(num => num !== null);
+    // Verificar si todos los números de la fila están extraídos
+    return numbers.every(num => extractedNums.includes(num));
+  }, []);
+
+  // Verificar si el cartón tiene bingo (todas las casillas marcadas)
+  const checkBingo = useCallback((card, extractedNums) => {
+    // Verificar fila por fila
+    for (let row = 0; row < 3; row++) {
+      const rowNumbers = card[row].filter(num => num !== null);
+      // Si hay algún número en la fila que no está extraído, no hay bingo
+      if (!rowNumbers.every(num => extractedNums.includes(num))) {
+        return false;
+      }
+    }
+    // Si todas las filas tienen todos sus números extraídos, hay bingo
+    return true;
+  }, []);
+
+  // Función para validar un cartón según su serie y número
+  const validateCard = useCallback((seed, cardNumber, validationType = 'both') => {
+    setIsValidating(true);
+    setValidationResult(null);
+    
+    try {
+      // Generar el cartón a validar
+      const card = generateSpecificCard(seed, cardNumber);
+      
+      if (!card) {
+        throw new Error('No se pudo generar el cartón con los datos proporcionados');
+      }
+      
+      // Verificar según el tipo de validación
+      let hasLine = false;
+      let lineNumber = -1;
+      let hasBingo = false;
+      
+      // Verificar líneas
+      if (validationType === 'line' || validationType === 'both') {
+        for (let i = 0; i < 3; i++) {
+          if (checkLine(card[i], extractedNumbers)) {
+            hasLine = true;
+            lineNumber = i + 1;
+            break;
+          }
+        }
+      }
+      
+      // Verificar bingo
+      if (validationType === 'bingo' || validationType === 'both') {
+        hasBingo = checkBingo(card, extractedNumbers);
+      }
+      
+      // Preparar el resultado
+      const result = {
+        card,
+        seed,
+        cardNumber,
+        hasLine,
+        lineNumber,
+        hasBingo,
+        extractedNumbers: [...extractedNumbers],
+        message: ''
+      };
+      
+      // Mensaje según el resultado
+      if (hasBingo) {
+        result.message = '¡BINGO! El cartón tiene todos los números marcados.';
+      } else if (hasLine) {
+        result.message = `¡LÍNEA! Línea completa en la fila ${lineNumber}.`;
+      } else {
+        result.message = 'El cartón no tiene línea ni bingo con los números extraídos.';
+      }
+      
+      setValidationResult(result);
+      return result;
+    } catch (error) {
+      const errorResult = {
+        hasLine: false,
+        hasBingo: false,
+        message: `Error: ${error.message || 'No se pudo validar el cartón'}`
+      };
+      setValidationResult(errorResult);
+      return errorResult;
+    } finally {
+      setIsValidating(false);
+    }
+  }, [generateSpecificCard, checkLine, checkBingo, extractedNumbers]);
+
   // Valores del contexto
   const contextValue = {
+    // Valores del generador de cartones
     printableCards,
     showPrintView,
     currentSeed,
     generatePrintableCards,
-    setShowPrintView
+    setShowPrintView,
+    
+    // Valores del juego de bingo
+    gameActive,
+    gameStatus,
+    extractedNumbers,
+    currentNumber,
+    remainingNumbers,
+    intervalTime,
+    
+    // Funciones del juego de bingo
+    startNewGame,
+    extractNextNumber,
+    pauseGame,
+    resumeGame,
+    endGame,
+    changeIntervalTime,
+    
+    // Configuración
+    voiceConfig,
+    updateVoiceConfig,
+    
+    // Validación de cartones
+    validateCard,
+    validationResult,
+    isValidating,
+    setValidationResult
   };
 
   return (
