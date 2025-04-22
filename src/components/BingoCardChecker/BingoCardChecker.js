@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, Space, Alert, Typography, Divider, Row, Col, Badge, Spin, Statistic } from 'antd';
-import { CheckOutlined, SearchOutlined, ReloadOutlined, TrophyOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Card, Form, Input, Button, Space, Alert, Typography, Divider, Row, Col, Badge, Spin } from 'antd';
+import { CheckOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useBingo } from '../../context/BingoContext';
 import './BingoCardChecker.css';
 
@@ -42,10 +42,11 @@ const CardDisplay = ({ card }) => {
 const BingoCardChecker = () => {
   const { 
     validateCard,
-    validationResult, 
     setValidationResult,
     extractedNumbers,
-    prizeConfig
+    prizeConfig,
+    linesClosed,
+    registerMultipleWinners
   } = useBingo();
   
   // Estado local para controlar la validación
@@ -68,6 +69,92 @@ const BingoCardChecker = () => {
       }));
     }
   }, [prizeConfig.seriesInfo, formData.seed]);
+  
+  // Calcular premio individual
+  const calculateIndividualPrize = useCallback((type, winnersCount) => {
+    if (!winnersCount) return 0;
+    
+    const { soldCards, cardPrice, linePercentage, bingoPercentage, totalPrizePercentage } = prizeConfig;
+    
+    if (!soldCards || !cardPrice) return 0;
+    
+    const totalPot = soldCards * cardPrice;
+    const adjustmentFactor = totalPrizePercentage / 100;
+    
+    if (type === 'line') {
+      const linePrize = totalPot * (linePercentage / 100) * adjustmentFactor;
+      return linePrize / winnersCount;
+    } else if (type === 'bingo') {
+      const bingoPrize = totalPot * (bingoPercentage / 100) * adjustmentFactor;
+      return bingoPrize / winnersCount;
+    }
+    
+    return 0;
+  }, [prizeConfig]);
+  
+  // Generar la lista de ganadores sin repetidos - no se usa actualmente
+  // eslint-disable-next-line no-unused-vars
+  const winners = useMemo(() => {
+    // Crear un mapa para agrupar por número de cartón
+    const winnerMap = new Map();
+    
+    // Procesar ganadores de línea
+    if (prizeConfig.lineWinners && prizeConfig.lineWinners.length > 0) {
+      prizeConfig.lineWinners.forEach(cardNumber => {
+        const prize = calculateIndividualPrize('line', prizeConfig.lineWinners.length);
+        
+        if (winnerMap.has(cardNumber)) {
+          const existing = winnerMap.get(cardNumber);
+          // Actualizar si ya existe añadiendo el premio de línea
+          winnerMap.set(cardNumber, {
+            ...existing,
+            hasLine: true,
+            totalPrize: existing.totalPrize + prize,
+            prizes: [...existing.prizes, { type: 'line', prize }]
+          });
+        } else {
+          // Crear nuevo registro
+          winnerMap.set(cardNumber, {
+            cardNumber,
+            hasLine: true,
+            hasBingo: false,
+            totalPrize: prize,
+            prizes: [{ type: 'line', prize }]
+          });
+        }
+      });
+    }
+    
+    // Procesar ganadores de bingo
+    if (prizeConfig.bingoWinners && prizeConfig.bingoWinners.length > 0) {
+      prizeConfig.bingoWinners.forEach(cardNumber => {
+        const prize = calculateIndividualPrize('bingo', prizeConfig.bingoWinners.length);
+        
+        if (winnerMap.has(cardNumber)) {
+          const existing = winnerMap.get(cardNumber);
+          // Actualizar si ya existe añadiendo el premio de bingo
+          winnerMap.set(cardNumber, {
+            ...existing,
+            hasBingo: true,
+            totalPrize: existing.totalPrize + prize,
+            prizes: [...existing.prizes, { type: 'bingo', prize }]
+          });
+        } else {
+          // Crear nuevo registro
+          winnerMap.set(cardNumber, {
+            cardNumber,
+            hasLine: false,
+            hasBingo: true,
+            totalPrize: prize,
+            prizes: [{ type: 'bingo', prize }]
+          });
+        }
+      });
+    }
+    
+    // Convertir el mapa a un array
+    return Array.from(winnerMap.values());
+  }, [prizeConfig.lineWinners, prizeConfig.bingoWinners, calculateIndividualPrize]);
   
   // Manejar cambios en los inputs
   const handleInputChange = (e) => {
@@ -95,6 +182,12 @@ const BingoCardChecker = () => {
       return 'No se ha encontrado ningún número de cartón válido';
     }
     
+    // Asegurarse de que no hay números repetidos
+    const uniqueNumbers = [...new Set(cardNumbers)];
+    if (uniqueNumbers.length !== cardNumbers.length) {
+      return 'Hay números de cartón repetidos. Cada cartón debe comprobarse una sola vez';
+    }
+    
     if (cardNumbers.some(n => n < 1)) {
       return 'Todos los números de cartón deben ser mayores que 0';
     }
@@ -106,16 +199,21 @@ const BingoCardChecker = () => {
   const processMultipleCards = (validationType) => {
     const errorMessage = validateForm();
     if (errorMessage) {
-      setValidationResult({
+      // Mostrar error como resultado
+      setMultipleResults([{
         hasLine: false,
         hasBingo: false,
-        message: `Error: ${errorMessage}`
-      });
+        message: `Error: ${errorMessage}`,
+        isError: true
+      }]);
       return;
     }
     
     // Extraer los números de cartón válidos
     const cardNumbers = formData.cardNumber.split(/[\s,]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+    
+    // Eliminar duplicados
+    const uniqueCardNumbers = [...new Set(cardNumbers)];
     
     // Limpiar resultados anteriores
     setMultipleResults([]);
@@ -124,26 +222,60 @@ const BingoCardChecker = () => {
     // Iniciar validación
     setIsValidating(true);
     
-    // Procesar cada cartón secuencialmente con un pequeño retraso entre cada uno
+    // Procesar cada cartón secuencialmente pero sin registrar ganadores
     const processCards = async () => {
-      const results = [];
-      for (let i = 0; i < cardNumbers.length; i++) {
-        const cardNumber = cardNumbers[i];
-        // Esperar a que se complete la validación del cartón actual
+      // Primero validamos todos los cartones sin registrarlos como ganadores
+      const validationResults = [];
+      
+      for (let i = 0; i < uniqueCardNumbers.length; i++) {
+        const cardNumber = uniqueCardNumbers[i];
+        // Validar cartón sin registrarlo como ganador todavía (usando el flag noRegister=true)
         const result = await new Promise(resolve => {
           validateCard(formData.seed, cardNumber, validationType, (res) => {
-            resolve(res);
-          });
+            resolve({...res, cardNumber});
+          }, true); // Pasamos true como noRegister
         });
-        results.push({ ...result, cardNumber });
+        validationResults.push(result);
       }
-      return results;
+      
+      // Filtrar los cartones ganadores
+      const winningCards = validationResults.filter(r => 
+        (validationType === 'line' && r.hasLine) || 
+        (validationType === 'bingo' && r.hasBingo)
+      );
+      
+      // Si hay cartones ganadores, registrarlos todos juntos
+      if (winningCards.length > 0) {
+        const winningCardNumbers = winningCards.map(r => r.cardNumber);
+        registerMultipleWinners(validationType, winningCardNumbers);
+        
+        // Actualizar los resultados con el premio ajustado (compartido)
+        const totalPrize = calculateIndividualPrize(validationType, 1) * winningCards.length;
+        const prizePerWinner = totalPrize / winningCards.length;
+        
+        // Actualizamos los mensajes para reflejar que son premios compartidos
+        return validationResults.map(result => {
+          if ((validationType === 'line' && result.hasLine) || 
+              (validationType === 'bingo' && result.hasBingo)) {
+            return {
+              ...result,
+              prize: prizePerWinner,
+              originalPrize: totalPrize,
+              sharedAmong: winningCards.length,
+              message: `¡${validationType === 'line' ? 'Línea' : 'Bingo'} válido! Premio compartido: ${prizePerWinner.toFixed(2)}€ (${winningCards.length} ganadores)`
+            };
+          }
+          return result;
+        });
+      }
+      
+      return validationResults;
     };
     
     // Esperar a que se completen todas las validaciones
     setTimeout(async () => {
       try {
-        const results = await processCards();
+        let results = await processCards();
         setMultipleResults(results);
       } finally {
         setIsValidating(false);
@@ -173,88 +305,42 @@ const BingoCardChecker = () => {
   
   // Render del resultado con premios
   const renderResult = () => {
-    if (validationResult) {
-      return (
-        <div className="validation-result">
-          <Divider />
-          
-          <Alert
-            message={validationResult.message}
-            type={validationResult.hasBingo ? 'success' : 
-                 validationResult.hasLine ? 'success' : 
-                 validationResult.message.includes('Error') ? 'error' : 'info'}
-            showIcon
-          />
-          
-          {(validationResult.hasLine || validationResult.hasBingo) && validationResult.prize > 0 && (
-            <div className="prize-info">
-              <Row gutter={[16, 16]} className="prize-row">
-                <Col span={24}>
-                  <Statistic
-                    title={
-                      <Space>
-                        <TrophyOutlined />
-                        <span>Premio</span>
-                      </Space>
-                    }
-                    value={validationResult.prize.toFixed(2)}
-                    suffix="€"
-                    valueStyle={{ color: '#faad14', fontWeight: 'bold' }}
-                  />
-                </Col>
-              </Row>
-
-              {/* Si hay múltiples ganadores, mostrar información */}
-              {validationResult.hasLine && prizeConfig.hasMultipleLineWinners && (
-                <Text type="secondary">
-                  Premio compartido entre {prizeConfig.lineWinners.length} ganadores
-                </Text>
-              )}
-              {validationResult.hasBingo && prizeConfig.hasMultipleBingoWinners && (
-                <Text type="secondary">
-                  Premio compartido entre {prizeConfig.bingoWinners.length} ganadores
-                </Text>
-              )}
-            </div>
-          )}
-          
-          {validationResult.card && (
-            <div className="card-container">
-              <Divider orientation="left">
-                <Space>
-                  <Text>Cartón #{validationResult.cardNumber}</Text>
-                  <Badge 
-                    count={validationResult.hasBingo ? 'BINGO' : 
-                          validationResult.hasLine ? 'LÍNEA' : null} 
-                    style={{ 
-                      backgroundColor: validationResult.hasBingo ? '#52c41a' : '#1890ff' 
-                    }}
-                  />
-                </Space>
-              </Divider>
-              
-              <CardDisplay card={validationResult.card} />
-              
-              {validationResult.hasLine && !validationResult.hasBingo && (
-                <div className="line-indicator">
-                  Línea en la fila {validationResult.lineNumber}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      );
-    }
-    
     // Renderizar múltiples resultados
     if (multipleResults.length > 0) {
+      // Si el primer resultado es un error, mostrarlo como alerta
+      if (multipleResults[0].isError) {
+        return (
+          <div className="validation-result">
+            <Divider />
+            <Alert
+              message={multipleResults[0].message}
+              type="error"
+              showIcon
+            />
+          </div>
+        );
+      }
+      
+      // Si las líneas están cerradas y hay un resultado que lo indica, mostrar alerta
+      const hasLineClosedResult = multipleResults.some(result => result.isLinesClosed);
+      
       return (
         <div className="multiple-results">
           <Divider>Resultados de la comprobación</Divider>
           
+          {hasLineClosedResult && (
+            <Alert
+              message="Líneas cerradas"
+              description="La fase de líneas está cerrada. No se pueden registrar más ganadores de línea."
+              type="warning"
+              showIcon
+              style={{ marginBottom: '16px' }}
+            />
+          )}
+          
           {multipleResults.map((result, index) => (
             <div key={`result-${index}`} className="result-item">
-              <div className="card-container">
+              <div className={`card-container ${result.hasBingo ? 'card-container-bingo' : result.hasLine ? 'card-container-line' : ''}`}>
                 <Divider orientation="left">
                   <Space>
                     <Text>Cartón #{result.cardNumber}</Text>
@@ -279,6 +365,17 @@ const BingoCardChecker = () => {
                 {result.hasLine && !result.hasBingo && result.lineNumber && (
                   <div className="line-indicator">
                     Línea en la fila {result.lineNumber}
+                  </div>
+                )}
+                
+                {(result.hasLine || result.hasBingo) && result.prize > 0 && (
+                  <div className="prize-info">
+                    {/* Información sobre premios compartidos */}
+                    {result.sharedAmong && result.sharedAmong > 1 && (
+                      <Text type="secondary">
+                        Premio total de {result.originalPrize?.toFixed(2)}€ compartido entre {result.sharedAmong} ganadores
+                      </Text>
+                    )}
                   </div>
                 )}
               </div>
@@ -321,7 +418,7 @@ const BingoCardChecker = () => {
           <Col xs={24} md={prizeConfig.seriesInfo ? 24 : 12}>
             <Form.Item 
               label="Números de cartones" 
-              tooltip="Introduce varios números separados por comas o espacios (ej: 1, 2, 3 o 1 2 3)"
+              tooltip="Introduce varios números separados por comas o espacios (ej: 1, 2, 3 o 1 2 3). No se permiten números repetidos."
             >
               <Input
                 placeholder="Ej: 1, 2, 3, 4, 5"
@@ -334,19 +431,20 @@ const BingoCardChecker = () => {
           </Col>
         </Row>
         
+        {/* Botones de acción */}
         <div className="validation-buttons">
           <Space>
-            <Button 
+            <Button
               type="primary"
               onClick={handleCheckLine}
               icon={<SearchOutlined />}
-              disabled={isValidating || extractedNumbers.length === 0}
+              disabled={isValidating || extractedNumbers.length === 0 || linesClosed}
             >
-              Comprobar Líneas
+              Comprobar Líneas {linesClosed && "(Cerrado)"}
             </Button>
             
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               danger
               onClick={handleCheckBingo}
               icon={<CheckOutlined />}

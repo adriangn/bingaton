@@ -1,22 +1,19 @@
 .bingo-card-checker {
-  margin-top: 20px;
   margin-bottom: 20px;
 }
 
-.validation-buttons {
+.bingo-checker-container {
   display: flex;
-  justify-content: center;
-  margin: 1rem 0;
+  flex-wrap: wrap;
 }
 
-.validation-loading {
-  display: flex;
-  justify-content: center;
-  margin: 1.5rem 0;
+.form-container {
+  padding-right: 16px;
 }
 
-.validation-result {
-  margin-top: 1rem;
+.summary-container {
+  display: flex;
+  flex-direction: column;
 }
 
 .bingo-card-display {
@@ -115,10 +112,61 @@
   margin-bottom: 8px;
 }
 
+.validation-buttons {
+  margin-bottom: 20px;
+}
+
+.validation-loading {
+  text-align: center;
+  margin: 20px 0;
+}
+
 .multiple-results {
   margin-top: 20px;
 }
 
 .result-item {
-  margin-bottom: 20px;
+  font-size: 0.9em;
+}
+
+/* Destacar cartones con premio */
+.card-container-bingo {
+  border-color: #52c41a !important;
+  box-shadow: 0 0 8px rgba(82, 196, 26, 0.3) !important;
+  background-color: #f6ffed;
+}
+
+.card-container-line {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 8px rgba(24, 144, 255, 0.3) !important;
+  background-color: #e6f7ff;
+}
+
+.winners-summary {
+  margin: 0;
+  height: 100%;
+  background-color: #fafafa;
+  border-radius: 4px;
+  padding: 1rem;
+  border: 1px solid #f0f0f0;
+}
+
+.winners-summary .ant-table-small {
+  font-size: 0.9em;
+}
+
+.winners-summary .ant-divider {
+  margin-top: 0;
+}
+
+/* Estilos para mejorar la apariencia en dispositivos móviles */
+@media (max-width: 768px) {
+  .winners-summary {
+    margin-top: 20px;
+  }
+  
+  .form-container,
+  .summary-container {
+    padding-right: 0;
+  }
 } 
