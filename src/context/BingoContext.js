@@ -323,6 +323,20 @@ export const BingoProvider = ({ children }) => {
     });
   }, [startNumberExtraction]);
   
+  // Función para configurar los premios al iniciar el juego - convertida a useCallback
+  const configurePrizes = useCallback((config) => {
+    setPrizeConfig(prev => ({
+      ...prev,
+      ...config,
+      hasLineWinner: false,
+      hasMultipleLineWinners: false,
+      lineWinners: [],
+      hasBingoWinner: false,
+      hasMultipleBingoWinners: false,
+      bingoWinners: [],
+    }));
+  }, []);
+  
   // Terminar la partida - movido antes de startNewGame
   const endGame = useCallback(() => {
     if (intervalRef.current) {
@@ -412,20 +426,6 @@ export const BingoProvider = ({ children }) => {
     }));
   }, []);
 
-  // Función para configurar los premios al iniciar el juego
-  const configurePrizes = (config) => {
-    setPrizeConfig({
-      ...prizeConfig,
-      ...config,
-      hasLineWinner: false,
-      hasMultipleLineWinners: false,
-      lineWinners: [],
-      hasBingoWinner: false,
-      hasMultipleBingoWinners: false,
-      bingoWinners: [],
-    });
-  };
-  
   // Calcular premios
   const calculatePrize = useCallback((type) => {
     const { soldCards, cardPrice, linePercentage, bingoPercentage } = prizeConfig;
