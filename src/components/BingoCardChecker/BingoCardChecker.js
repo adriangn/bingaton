@@ -8,17 +8,38 @@ const { Title, Text } = Typography;
 
 // Componente para mostrar un cartón de bingo
 const CardDisplay = ({ card }) => {
+  const { extractedNumbers } = useBingo();
+  
+  // Definir las cabeceras de columna para el bingo español
+  const columnHeaders = ['1-9', '10-19', '20-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80-90'];
+  
   return (
     <div className="bingo-card-display">
       <table className="bingo-table">
+        <thead>
+          <tr className="column-headers">
+            {columnHeaders.map((header, index) => (
+              <th key={index}>{header}</th>
+            ))}
+          </tr>
+        </thead>
         <tbody>
           {card.map((row, rowIndex) => (
             <tr key={rowIndex}>
-              {row.map((number, colIndex) => (
-                <td key={colIndex} className={number ? 'number-cell' : 'empty-cell'}>
-                  {number}
-                </td>
-              ))}
+              {row.map((number, colIndex) => {
+                const isExtracted = number !== null && extractedNumbers.includes(number);
+                return (
+                  <td 
+                    key={colIndex} 
+                    className={`
+                      ${number ? 'number-cell' : 'empty-cell'}
+                      ${isExtracted ? 'extracted-number' : ''}
+                    `}
+                  >
+                    {number}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
