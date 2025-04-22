@@ -10,19 +10,9 @@ const { Title, Text } = Typography;
 const CardDisplay = ({ card }) => {
   const { extractedNumbers } = useBingo();
   
-  // Definir las cabeceras de columna para el bingo español
-  const columnHeaders = ['1-9', '10-19', '20-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80-90'];
-  
   return (
     <div className="bingo-card-display">
       <table className="bingo-table">
-        <thead>
-          <tr className="column-headers">
-            {columnHeaders.map((header, index) => (
-              <th key={index}>{header}</th>
-            ))}
-          </tr>
-        </thead>
         <tbody>
           {card.map((row, rowIndex) => (
             <tr key={rowIndex}>
