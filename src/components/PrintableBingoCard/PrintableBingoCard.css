@@ -14,14 +14,14 @@
 
 /* Contenido interno del cartón (más pequeño que las marcas de corte) */
 .print-card .ant-card-body {
-  padding: 2px !important;
+  padding: 0 !important; /* Reducido a 0 */
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border: none;
-  margin: 4mm; /* Aumentado a 4mm para reducir significativamente el contenido interno */
-  width: calc(100% - 8mm); /* Ajustado para considerar los márgenes */
-  height: calc(100% - 8mm); /* Ajustado para considerar los márgenes */
+  margin: 3mm; /* Reducido para aumentar el espacio útil */
+  width: calc(100% - 6mm); /* Ajustado para considerar los márgenes */
+  height: calc(100% - 6mm); /* Ajustado para considerar los márgenes */
   background-color: white;
 }
 
@@ -74,10 +74,10 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 0;
-  font-size: 5px; /* Tamaño reducido */
+  font-size: 6px; /* Aumentado ligeramente para mejor legibilidad */
   flex: 0 0 auto;
-  padding: 0 1mm; 
-  width: 80%; /* Ancho reducido drásticamente */
+  padding: 0; 
+  width: 85%; /* Aumentado para mejor uso del espacio */
   margin: 0 auto; /* Centrado */
 }
 
@@ -99,11 +99,11 @@
 }
 
 .print-card-grid {
-  flex: 0.95;
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 1.5mm; /* Aumentado padding alrededor de la tabla */
+  padding: 1mm; /* Reducido para maximizar el espacio de la tabla */
   box-sizing: border-box;
 }
 
@@ -112,14 +112,13 @@
   display: flex;
   justify-content: flex-start; 
   align-items: center;
-  font-size: 5px; /* Tamaño reducido */
+  font-size: 4px;
   font-weight: bold;
   letter-spacing: 0.5px;
   margin-top: 0;
   padding-left: 1mm;
-  margin-left: 0;
-  width: 80%; /* Ancho reducido drásticamente */
-  margin: 0 auto; /* Centrado */
+  margin-left: 4mm;
+  width: 85%;
   text-align: left;
   background-color: white;
   border-radius: 2px;
@@ -127,24 +126,26 @@
 }
 
 .bingo-table {
-  width: 80%; /* Reducido drásticamente al 80% */
+  width: 90%; /* Aumentado para usar mejor el espacio */
   margin: 0 auto; /* Centrado horizontalmente */
   margin-top: 0;
   border-collapse: collapse;
-  border: 1px solid #000;
+  border: 0.5px solid #000; /* Borde más delgado */
   table-layout: fixed;
+  transform: scale(0.95); /* Menos reducción para mejor visibilidad */
+  transform-origin: center;
 }
 
 .bingo-table tr {
-  height: 29%; /* Reducida aún más la altura de las filas */
+  height: 33%; /* Aumentado para distribuir mejor el espacio vertical */
 }
 
 .bingo-table td {
-  border: 1px solid #000;
+  border: 0.5px solid #000; /* Borde más delgado */
   text-align: center;
   vertical-align: middle;
   font-weight: bold;
-  font-size: 9px; /* Reducido drásticamente el tamaño de fuente */
+  font-size: 10px; /* Aumentado para mejor legibilidad */
   width: 11.11%;
   position: relative;
   padding: 0;
@@ -154,7 +155,7 @@
 .bingo-table td:before {
   content: "";
   display: block;
-  padding-top: 80%; /* Reducido drásticamente para evitar desbordamiento */
+  padding-top: 90%; /* Aumentado para celdas más cuadradas */
 }
 
 .cell-content {
@@ -166,7 +167,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-weight: bold; /* Hacemos los números más negrita */
+  font-weight: bold;
+  transform: scale(0.9); /* Reducción adicional del contenido */
 }
 
 /* Ajustamos el tamaño del contenido dentro de las celdas */
@@ -177,7 +179,7 @@
   align-items: center;
   width: 100%;
   height: 100%;
-  line-height: 1; /* Mejora la alineación vertical */
+  line-height: 1;
 }
 
 /* Eliminamos el truco anterior que causaba el desbordamiento */
@@ -187,7 +189,7 @@
 
 /* Estilo para el icono de globo */
 .globe-icon {
-  font-size: 10px; /* Reducido drásticamente el tamaño */
+  font-size: 8px; /* Reducido drásticamente */
   color: #222;
 }
 
@@ -246,18 +248,19 @@
   
   /* Mejoras para la impresión */
   .bingo-table {
-    border: 1px solid black !important;
+    border: 0.5px solid black !important; /* Borde más delgado */
     border-collapse: collapse;
     margin: 0 auto !important;
     padding: 0;
-    width: 80% !important; /* Reducido drásticamente para impresión */
+    width: 90% !important; /* Aumentado para usar mejor el espacio */
+    transform: scale(0.95) !important; /* Menos reducción para impresión */
   }
   
   .bingo-table td {
-    border: 1px solid black !important;
+    border: 0.5px solid black !important; /* Borde más delgado */
     margin: 0;
     padding: 0;
-    font-size: 9px !important; /* Asegurar que el tamaño de fuente pequeño se mantenga en impresión */
+    font-size: 10px !important; /* Aumentado para mejor legibilidad */
   }
   
   .print-divider {
