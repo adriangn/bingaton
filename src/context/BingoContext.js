@@ -486,15 +486,22 @@ export const BingoProvider = ({ children }) => {
     }
   }, [prizeConfig]);
 
-  // Función para validar cartones - modificada para incluir premios
-  const validateCard = useCallback((seed, cardNumber, validationType) => {
+  // Función para validar cartones - modificada para incluir premios y callback
+  const validateCard = useCallback((seed, cardNumber, validationType, callback) => {
     setIsValidating(true);
     
     // Simulamos un pequeño delay para que parezca que está procesando
     setTimeout(() => {
       try {
         if (!seed || !cardNumber) {
-          throw new Error('La serie o el número de cartón son inválidos');
+          const result = {
+            hasLine: false,
+            hasBingo: false,
+            message: 'La serie o el número de cartón son inválidos'
+          };
+          setValidationResult(result);
+          if (callback) callback(result);
+          return;
         }
         
         // Creamos el generador aleatorio con la semilla
@@ -511,7 +518,14 @@ export const BingoProvider = ({ children }) => {
         }
         
         if (!targetCard) {
-          throw new Error('No se pudo generar el cartón correctamente');
+          const result = {
+            hasLine: false,
+            hasBingo: false,
+            message: 'No se pudo generar el cartón correctamente'
+          };
+          setValidationResult(result);
+          if (callback) callback(result);
+          return;
         }
         
         // Comprobar si hay línea o bingo
@@ -580,12 +594,15 @@ export const BingoProvider = ({ children }) => {
         }
         
         setValidationResult(result);
+        if (callback) callback(result);
       } catch (error) {
-        setValidationResult({
+        const result = {
           hasLine: false,
           hasBingo: false,
           message: `Error: ${error.message}`
-        });
+        };
+        setValidationResult(result);
+        if (callback) callback(result);
       } finally {
         setIsValidating(false);
       }

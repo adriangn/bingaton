@@ -43,6 +43,9 @@ const BingoCardChecker = () => {
     cardNumber: ''
   });
   
+  // Estado para almacenar múltiples resultados
+  const [multipleResults, setMultipleResults] = useState([]);
+  
   // Actualizar la serie si cambia en la configuración
   useEffect(() => {
     if (prizeConfig.seriesInfo && prizeConfig.seriesInfo !== formData.seed) {
@@ -68,19 +71,26 @@ const BingoCardChecker = () => {
       return 'Debes introducir la serie del cartón';
     }
     
-    if (!formData.cardNumber || isNaN(parseInt(formData.cardNumber))) {
-      return 'Debes introducir un número de cartón válido';
+    if (!formData.cardNumber || formData.cardNumber.trim() === '') {
+      return 'Debes introducir al menos un número de cartón válido';
     }
     
-    if (parseInt(formData.cardNumber) < 1) {
-      return 'El número de cartón debe ser mayor que 0';
+    // Comprobar que todos los números sean válidos
+    const cardNumbers = formData.cardNumber.split(/[\s,]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+    
+    if (cardNumbers.length === 0) {
+      return 'No se ha encontrado ningún número de cartón válido';
+    }
+    
+    if (cardNumbers.some(n => n < 1)) {
+      return 'Todos los números de cartón deben ser mayores que 0';
     }
     
     return null;
   };
   
-  // Manejar validación de línea
-  const handleCheckLine = () => {
+  // Procesar múltiples cartones
+  const processMultipleCards = (validationType) => {
     const errorMessage = validateForm();
     if (errorMessage) {
       setValidationResult({
@@ -91,30 +101,51 @@ const BingoCardChecker = () => {
       return;
     }
     
-    validateCard(
-      formData.seed, 
-      parseInt(formData.cardNumber),
-      'line'
-    );
+    // Extraer los números de cartón válidos
+    const cardNumbers = formData.cardNumber.split(/[\s,]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+    
+    // Limpiar resultados anteriores
+    setMultipleResults([]);
+    setValidationResult(null);
+    
+    // Iniciar validación
+    setIsValidating(true);
+    
+    // Procesar cada cartón secuencialmente con un pequeño retraso entre cada uno
+    const processCards = async () => {
+      const results = [];
+      for (let i = 0; i < cardNumbers.length; i++) {
+        const cardNumber = cardNumbers[i];
+        // Esperar a que se complete la validación del cartón actual
+        const result = await new Promise(resolve => {
+          validateCard(formData.seed, cardNumber, validationType, (res) => {
+            resolve(res);
+          });
+        });
+        results.push({ ...result, cardNumber });
+      }
+      return results;
+    };
+    
+    // Esperar a que se completen todas las validaciones
+    setTimeout(async () => {
+      try {
+        const results = await processCards();
+        setMultipleResults(results);
+      } finally {
+        setIsValidating(false);
+      }
+    }, 100);
+  };
+  
+  // Manejar validación de línea
+  const handleCheckLine = () => {
+    processMultipleCards('line');
   };
   
   // Manejar validación de bingo
   const handleCheckBingo = () => {
-    const errorMessage = validateForm();
-    if (errorMessage) {
-      setValidationResult({
-        hasLine: false,
-        hasBingo: false,
-        message: `Error: ${errorMessage}`
-      });
-      return;
-    }
-    
-    validateCard(
-      formData.seed, 
-      parseInt(formData.cardNumber),
-      'bingo'
-    );
+    processMultipleCards('bingo');
   };
   
   // Resetear el formulario y resultados
@@ -124,93 +155,138 @@ const BingoCardChecker = () => {
       cardNumber: ''
     });
     setValidationResult(null);
+    setMultipleResults([]);
   };
   
   // Render del resultado con premios
   const renderResult = () => {
-    if (!validationResult) return null;
-    
-    return (
-      <div className="validation-result">
-        <Divider />
-        
-        <Alert
-          message={validationResult.message}
-          type={validationResult.hasBingo ? 'success' : 
-               validationResult.hasLine ? 'success' : 
-               validationResult.message.includes('Error') ? 'error' : 'info'}
-          showIcon
-        />
-        
-        {(validationResult.hasLine || validationResult.hasBingo) && validationResult.prize > 0 && (
-          <div className="prize-info">
-            <Row gutter={[16, 16]} className="prize-row">
-              <Col span={24}>
-                <Statistic
-                  title={
-                    <Space>
-                      <TrophyOutlined />
-                      <span>Premio</span>
-                    </Space>
-                  }
-                  value={validationResult.prize.toFixed(2)}
-                  suffix="€"
-                  valueStyle={{ color: '#faad14', fontWeight: 'bold' }}
-                />
-              </Col>
-            </Row>
+    if (validationResult) {
+      return (
+        <div className="validation-result">
+          <Divider />
+          
+          <Alert
+            message={validationResult.message}
+            type={validationResult.hasBingo ? 'success' : 
+                 validationResult.hasLine ? 'success' : 
+                 validationResult.message.includes('Error') ? 'error' : 'info'}
+            showIcon
+          />
+          
+          {(validationResult.hasLine || validationResult.hasBingo) && validationResult.prize > 0 && (
+            <div className="prize-info">
+              <Row gutter={[16, 16]} className="prize-row">
+                <Col span={24}>
+                  <Statistic
+                    title={
+                      <Space>
+                        <TrophyOutlined />
+                        <span>Premio</span>
+                      </Space>
+                    }
+                    value={validationResult.prize.toFixed(2)}
+                    suffix="€"
+                    valueStyle={{ color: '#faad14', fontWeight: 'bold' }}
+                  />
+                </Col>
+              </Row>
 
-            {/* Si hay múltiples ganadores, mostrar información */}
-            {validationResult.hasLine && prizeConfig.hasMultipleLineWinners && (
-              <Text type="secondary">
-                Premio compartido entre {prizeConfig.lineWinners.length} ganadores
-              </Text>
-            )}
-            {validationResult.hasBingo && prizeConfig.hasMultipleBingoWinners && (
-              <Text type="secondary">
-                Premio compartido entre {prizeConfig.bingoWinners.length} ganadores
-              </Text>
-            )}
-          </div>
-        )}
-        
-        {validationResult.card && (
-          <div className="card-container">
-            <Divider orientation="left">
-              <Space>
-                <Text>Cartón #{validationResult.cardNumber}</Text>
-                <Badge 
-                  count={validationResult.hasBingo ? 'BINGO' : 
-                        validationResult.hasLine ? 'LÍNEA' : null} 
-                  style={{ 
-                    backgroundColor: validationResult.hasBingo ? '#52c41a' : '#1890ff' 
-                  }}
-                />
-              </Space>
-            </Divider>
-            
-            <CardDisplay card={validationResult.card} />
-            
-            {validationResult.hasLine && !validationResult.hasBingo && (
-              <div className="line-indicator">
-                Línea en la fila {validationResult.lineNumber}
+              {/* Si hay múltiples ganadores, mostrar información */}
+              {validationResult.hasLine && prizeConfig.hasMultipleLineWinners && (
+                <Text type="secondary">
+                  Premio compartido entre {prizeConfig.lineWinners.length} ganadores
+                </Text>
+              )}
+              {validationResult.hasBingo && prizeConfig.hasMultipleBingoWinners && (
+                <Text type="secondary">
+                  Premio compartido entre {prizeConfig.bingoWinners.length} ganadores
+                </Text>
+              )}
+            </div>
+          )}
+          
+          {validationResult.card && (
+            <div className="card-container">
+              <Divider orientation="left">
+                <Space>
+                  <Text>Cartón #{validationResult.cardNumber}</Text>
+                  <Badge 
+                    count={validationResult.hasBingo ? 'BINGO' : 
+                          validationResult.hasLine ? 'LÍNEA' : null} 
+                    style={{ 
+                      backgroundColor: validationResult.hasBingo ? '#52c41a' : '#1890ff' 
+                    }}
+                  />
+                </Space>
+              </Divider>
+              
+              <CardDisplay card={validationResult.card} />
+              
+              {validationResult.hasLine && !validationResult.hasBingo && (
+                <div className="line-indicator">
+                  Línea en la fila {validationResult.lineNumber}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    // Renderizar múltiples resultados
+    if (multipleResults.length > 0) {
+      return (
+        <div className="multiple-results">
+          <Divider>Resultados de la comprobación</Divider>
+          
+          {multipleResults.map((result, index) => (
+            <div key={`result-${index}`} className="result-item">
+              <div className="card-container">
+                <Divider orientation="left">
+                  <Space>
+                    <Text>Cartón #{result.cardNumber}</Text>
+                    <Badge 
+                      count={result.hasBingo ? 'BINGO' : 
+                            result.hasLine ? 'LÍNEA' : 'NO PREMIADO'} 
+                      style={{ 
+                        backgroundColor: result.hasBingo ? '#52c41a' : 
+                                        result.hasLine ? '#1890ff' : '#f5222d'
+                      }}
+                    />
+                    {(result.hasLine || result.hasBingo) && result.prize > 0 && (
+                      <Text strong style={{ color: '#faad14' }}>
+                        {result.prize.toFixed(2)}€
+                      </Text>
+                    )}
+                  </Space>
+                </Divider>
+                
+                <CardDisplay card={result.card} />
+                
+                {result.hasLine && !result.hasBingo && result.lineNumber && (
+                  <div className="line-indicator">
+                    Línea en la fila {result.lineNumber}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    return null;
   };
   
   return (
     <Card className="bingo-card-checker">
-      <Title level={4}>Comprobar Cartón</Title>
+      <Title level={4}>Comprobar Cartones</Title>
       
       <Form layout="vertical">
         <Row gutter={16}>
           <Col xs={24} md={prizeConfig.seriesInfo ? 24 : 12}>
             {!prizeConfig.seriesInfo ? (
-              <Form.Item label="Serie del cartón">
+              <Form.Item label="Serie de los cartones">
                 <Input
                   placeholder="Ej: A-1000000"
                   name="seed"
@@ -220,7 +296,7 @@ const BingoCardChecker = () => {
                 />
               </Form.Item>
             ) : (
-              <Form.Item label="Serie del cartón">
+              <Form.Item label="Serie de los cartones">
                 <Input
                   value={formData.seed}
                   disabled={true}
@@ -230,14 +306,15 @@ const BingoCardChecker = () => {
             )}
           </Col>
           <Col xs={24} md={prizeConfig.seriesInfo ? 24 : 12}>
-            <Form.Item label="Número del cartón">
+            <Form.Item 
+              label="Números de cartones" 
+              tooltip="Introduce varios números separados por comas o espacios (ej: 1, 2, 3 o 1 2 3)"
+            >
               <Input
-                type="number"
-                placeholder="Ej: 1"
+                placeholder="Ej: 1, 2, 3, 4, 5"
                 name="cardNumber"
                 value={formData.cardNumber}
                 onChange={handleInputChange}
-                min={1}
                 disabled={isValidating}
               />
             </Form.Item>
@@ -252,7 +329,7 @@ const BingoCardChecker = () => {
               icon={<SearchOutlined />}
               disabled={isValidating || extractedNumbers.length === 0}
             >
-              Comprobar Línea
+              Comprobar Líneas
             </Button>
             
             <Button 
@@ -262,7 +339,7 @@ const BingoCardChecker = () => {
               icon={<CheckOutlined />}
               disabled={isValidating || extractedNumbers.length === 0}
             >
-              Comprobar Bingo
+              Comprobar Bingos
             </Button>
             
             <Button 
@@ -277,7 +354,7 @@ const BingoCardChecker = () => {
       
       {isValidating && (
         <div className="validation-loading">
-          <Spin tip="Validando cartón..." />
+          <Spin tip="Validando cartones..." />
         </div>
       )}
       
