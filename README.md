@@ -1,70 +1,74 @@
-# Getting Started with Create React App
+# Bingaton
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Descripción
 
-## Available Scripts
+Bingaton es una aplicación web para la generación y gestión de partidas de bingo, diseñada exclusivamente con fines educativos y de entretenimiento personal sin ánimo de lucro. Esta herramienta permite generar cartones de bingo con formato español, imprimir series de cartones y gestionar una partida de bingo en vivo.
 
-In the project directory, you can run:
+## Características
 
-### `npm start`
+- 🎮 **Juego de Bingo**: Sistema completo para jugar al bingo en vivo
+- 🎲 **Generador de Cartones**: Creación de cartones de bingo en formato español (3x9)
+- 🖨️ **Impresión de Cartones**: Posibilidad de imprimir series de cartones generados
+- 🔊 **Sistema de Voz**: Anunciado de números por voz configurable
+- 💰 **Gestión de Premios**: Cálculo automático de premios para línea y bingo
+- 🔍 **Validación de Cartones**: Sistema para verificar cartones ganadores
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Tecnologías
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- React 19.1.0
+- Ant Design 5.24.7
+- HTML2Canvas & jsPDF para la generación de PDF
 
-### `npm test`
+## Instalación
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Clona el repositorio:
+   ```
+   git clone https://github.com/tu-usuario/bingaton.git
+   ```
 
-### `npm run build`
+2. Instala las dependencias:
+   ```
+   cd bingaton
+   npm install
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. Inicia la aplicación en modo desarrollo:
+   ```
+   npm start
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Uso
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Generador de Cartones
+1. Accede a la sección "Generador de Cartones"
+2. Configura la cantidad de cartones a generar
+3. Opcionalmente establece una semilla para reproducibilidad
+4. Haz clic en "Generar cartones"
+5. Utiliza la opción de impresión para obtener los cartones en PDF
 
-### `npm run eject`
+### Juego de Bingo
+1. Accede a la sección "Jugar al Bingo"
+2. Configura los parámetros del juego (intervalo, voz, premios)
+3. Haz clic en "Iniciar juego" para comenzar a extraer números
+4. Utiliza los controles para pausar o detener el juego
+5. Valida los cartones ganadores cuando se reclame línea o bingo
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Aviso Legal
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Esta aplicación es una herramienta de demostración y se proporciona "TAL CUAL", sin ningún tipo de garantía. Bingaton no está asociada, afiliada ni respaldada por ninguna entidad de juego, casino o empresa de apuestas.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+La aplicación está diseñada exclusivamente para fines de demostración, educativos o de entretenimiento personal sin ánimo de lucro. Cualquier uso comercial o en entornos de juego real está expresamente prohibido.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Para más detalles, consulta la sección "Aviso Legal" dentro de la aplicación.
 
-## Learn More
+## Licencia
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Este proyecto está licenciado bajo la Licencia Pública General de GNU v3 (GPL-3.0). Consulta el archivo [LICENSE](LICENSE) para más detalles.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Contribuciones
 
-### Code Splitting
+Las contribuciones son bienvenidas. Por favor, abre un issue para discutir los cambios que te gustaría realizar antes de enviar un pull request.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Contacto
 
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Si tienes preguntas o comentarios sobre este proyecto, por favor abre un issue en este repositorio.
