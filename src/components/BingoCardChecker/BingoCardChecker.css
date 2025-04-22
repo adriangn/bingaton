@@ -27,24 +27,24 @@
 
 .bingo-table {
   width: 100%;
-  max-width: 450px;
+  max-width: 350px;
   border-collapse: collapse;
   border: 2px solid #1890ff;
   table-layout: fixed;
 }
 
 .bingo-table tr {
-  height: 40px;
+  height: 32px;
 }
 
 .bingo-table td {
   width: 11.11%;
-  height: 40px;
+  height: 32px;
   text-align: center;
   vertical-align: middle;
   border: 1px solid #d9d9d9;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .bingo-table .number-cell {

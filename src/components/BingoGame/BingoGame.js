@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Card, Button, Typography, Divider, Space, InputNumber, Statistic, Row, Col, Switch, Slider, Form, Collapse, Tabs } from 'antd';
-import { PlayCircleOutlined, PauseCircleOutlined, StopOutlined, SettingOutlined, CheckSquareOutlined } from '@ant-design/icons';
+import { Card, Button, Typography, Divider, Space, InputNumber, Statistic, Row, Col, Switch, Slider, Form, Tabs } from 'antd';
+import { PlayCircleOutlined, PauseCircleOutlined, StopOutlined, CheckSquareOutlined, SettingOutlined } from '@ant-design/icons';
 import { useBingo } from '../../context/BingoContext';
 import BingoCardChecker from '../BingoCardChecker';
 import './BingoGame.css';
 
 const { Title, Text } = Typography;
-const { Panel } = Collapse;
 const { TabPane } = Tabs;
 
 // Componente para la configuración
@@ -49,9 +48,9 @@ const BingoSettings = ({ voiceConfig, updateVoiceConfig, disabled, intervalTime,
   };
   
   return (
-    <Collapse className="settings-panel">
-      <Panel header="Configuración del juego" key="1" extra={<SettingOutlined />}>
-        <Form layout="vertical">
+    <Form layout="vertical" className="settings-form">
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={12}>
           <Title level={5}>Configuración general</Title>
           
           <Form.Item
@@ -67,9 +66,9 @@ const BingoSettings = ({ voiceConfig, updateVoiceConfig, disabled, intervalTime,
               disabled={isRunning}
             />
           </Form.Item>
+        </Col>
 
-          <Divider className="settings-divider" />
-          
+        <Col xs={24} md={12}>
           <Title level={5}>Configuración de voz</Title>
           
           <Form.Item
@@ -132,9 +131,9 @@ const BingoSettings = ({ voiceConfig, updateVoiceConfig, disabled, intervalTime,
               Probar audio
             </Button>
           </Form.Item>
-        </Form>
-      </Panel>
-    </Collapse>
+        </Col>
+      </Row>
+    </Form>
   );
 };
 
@@ -155,8 +154,9 @@ const BingoGame = () => {
     updateVoiceConfig
   } = useBingo();
 
-  // Estado para controlar las pestañas
+  // Estado para controlar las pestañas y visibilidad de configuración
   const [activeTab, setActiveTab] = useState('board');
+  const [showSettings, setShowSettings] = useState(false);
 
   // Renderizar los números extraídos en forma de cuadrícula
   const renderExtractedNumbers = () => {
@@ -188,8 +188,6 @@ const BingoGame = () => {
 
   return (
     <Card className="bingo-game-container">
-      <Title level={3}>Juego de Bingo en Vivo</Title>
-      
       {gameActive ? (
         <div className="active-game">
           <Row gutter={[16, 16]}>
@@ -254,22 +252,34 @@ const BingoGame = () => {
               >
                 Terminar Partida
               </Button>
+
+              <Button
+                icon={<SettingOutlined />}
+                onClick={() => setShowSettings(!showSettings)}
+                size="large"
+                type={showSettings ? 'primary' : 'default'}
+              >
+                Configuración
+              </Button>
             </Space>
           </div>
 
-          {/* Panel de configuración en juego */}
-          <BingoSettings 
-            voiceConfig={voiceConfig}
-            updateVoiceConfig={updateVoiceConfig}
-            disabled={gameStatus === 'finished'}
-            intervalTime={intervalTime}
-            changeIntervalTime={changeIntervalTime}
-            isRunning={gameStatus === 'running'}
-          />
-          
           <Divider />
           
-          {/* Pestañas para tablero y comprobación de cartones */}
+          {showSettings && (
+            <>
+              <BingoSettings 
+                voiceConfig={voiceConfig}
+                updateVoiceConfig={updateVoiceConfig}
+                disabled={gameStatus === 'finished'}
+                intervalTime={intervalTime}
+                changeIntervalTime={changeIntervalTime}
+                isRunning={gameStatus === 'running'}
+              />
+              <Divider />
+            </>
+          )}
+          
           <Tabs 
             activeKey={activeTab} 
             onChange={setActiveTab}
@@ -312,19 +322,32 @@ const BingoGame = () => {
         <div className="start-game">
           <Title level={4}>Iniciar una nueva partida de bingo</Title>
           <Text>
-            Inicia una partida para comenzar a sacar números automáticamente. 
-            Puedes pausar en cualquier momento para comprobar líneas y bingos.
+            Configura las opciones del juego y pulsa Iniciar Partida para comenzar a sacar números automáticamente.
+            Podrás pausar en cualquier momento para comprobar líneas y bingos.
           </Text>
 
-          {/* Panel de configuración antes de iniciar el juego */}
-          <BingoSettings 
-            voiceConfig={voiceConfig}
-            updateVoiceConfig={updateVoiceConfig}
-            disabled={false}
-            intervalTime={intervalTime}
-            changeIntervalTime={changeIntervalTime}
-            isRunning={false}
-          />
+          <Button 
+            type="primary" 
+            icon={<SettingOutlined />}
+            onClick={() => setShowSettings(!showSettings)}
+            style={{ margin: '16px 0' }}
+          >
+            {showSettings ? 'Ocultar Configuración' : 'Mostrar Configuración'}
+          </Button>
+
+          {showSettings && (
+            <>
+              <Divider />
+              <BingoSettings 
+                voiceConfig={voiceConfig}
+                updateVoiceConfig={updateVoiceConfig}
+                disabled={false}
+                intervalTime={intervalTime}
+                changeIntervalTime={changeIntervalTime}
+                isRunning={false}
+              />
+            </>
+          )}
           
           <Button 
             type="primary" 
