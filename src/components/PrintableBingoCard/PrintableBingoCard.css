@@ -19,7 +19,7 @@
   flex-direction: column;
   overflow: hidden;
   border: none;
-  margin: 3mm; /* Aumentado a 3mm para reducir el contenido interno */
+  margin: 3mm; /* Aumentado para reducir el contenido interno */
   width: calc(100% - 6mm); /* Ajustado para considerar los márgenes */
   height: calc(100% - 6mm); /* Ajustado para considerar los márgenes */
   background-color: white;
@@ -76,7 +76,7 @@
   margin-bottom: 0;
   font-size: 5px; /* Tamaño reducido */
   flex: 0 0 auto;
-  padding: 0;
+  padding: 0 1mm; 
   width: 90%; /* Ancho reducido */
   margin: 0 auto; /* Centrado */
 }
@@ -112,11 +112,11 @@
   display: flex;
   justify-content: flex-start; 
   align-items: center;
-  font-size: 5px;
+  font-size: 5px; /* Tamaño reducido */
   font-weight: bold;
   letter-spacing: 0.5px;
   margin-top: 0;
-  padding-left: 0;
+  padding-left: 1mm;
   margin-left: 0;
   width: 90%; /* Ancho reducido */
   margin: 0 auto; /* Centrado */
