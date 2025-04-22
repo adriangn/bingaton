@@ -1,0 +1,14 @@
+.ant-modal-content {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.ant-typography h4.ant-typography {
+  margin-top: 24px;
+  color: #1677FF;
+}
+
+.ant-typography p.ant-typography {
+  text-align: justify;
+  margin-bottom: 16px;
+} 

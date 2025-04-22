@@ -7,6 +7,7 @@ import GameControls from './components/GameControls';
 import PrintPage from './components/PrintPage';
 import Logo from './components/Logo';
 import BingoGame from './components/BingoGame';
+import LegalNotice from './components/LegalNotice';
 
 // Importar el contexto
 import { BingoProvider, useBingo } from './context/BingoContext';
@@ -60,6 +61,7 @@ const BingoApp = ({ currentView }) => {
 // Componente App con proveedor de contexto
 function App() {
   const [currentMenuKey, setCurrentMenuKey] = useState('1');
+  const [showLegal, setShowLegal] = useState(false);
   
   const handleMenuClick = (e) => {
     setCurrentMenuKey(e.key);
@@ -87,8 +89,9 @@ function App() {
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
-          Bingaton ©{new Date().getFullYear()} Creado con React y Ant Design
+          <a onClick={() => setShowLegal(true)} style={{ cursor: 'pointer' }}>Aviso Legal</a>
         </Footer>
+        <LegalNotice isVisible={showLegal} onClose={() => setShowLegal(false)} />
       </Layout>
     </BingoProvider>
   );
