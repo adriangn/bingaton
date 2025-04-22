@@ -115,7 +115,6 @@ export const BingoProvider = ({ children }) => {
   const [remainingNumbers, setRemainingNumbers] = useState([]);
   const [intervalTime, setIntervalTime] = useState(5); // segundos entre cada número
   const [gameStatus, setGameStatus] = useState('idle'); // 'idle', 'running', 'paused', 'finished'
-  const [linesClosed, setLinesClosed] = useState(false); // Indica si ya no se pueden registrar más líneas
 
   // Estado para validación de cartones
   const [validationResult, setValidationResult] = useState(null);
@@ -134,8 +133,8 @@ export const BingoProvider = ({ children }) => {
     seriesInfo: '',      // Serie de los cartones
     soldCards: 0,        // Cantidad de cartones vendidos
     cardPrice: 1.00,     // Precio por cartón
-    linePercentage: 25,  // Porcentaje para premio línea (25% por defecto)
-    bingoPercentage: 75, // Porcentaje para premio bingo (75% por defecto)
+    linePercentage: 15,  // Porcentaje para premio línea (15% por defecto)
+    bingoPercentage: 50, // Porcentaje para premio bingo (50% por defecto)
     totalPrizePercentage: 100, // Porcentaje total a repartir (100% por defecto)
     hasLineWinner: false, // Indica si ya hay ganador de línea
     hasMultipleLineWinners: false, // Indica si hay múltiples ganadores de línea
@@ -270,9 +269,8 @@ export const BingoProvider = ({ children }) => {
     });
   }, []);
 
-  // Extraer el siguiente número
+  // Extraer el siguiente número - ahora con useCallback
   const extractNextNumber = useCallback(() => {
-    // Usar un método que asegure operaciones atómicas para evitar problemas de concurrencia
     setRemainingNumbers(prevRemaining => {
       if (prevRemaining.length === 0) {
         pauseGame();
@@ -290,23 +288,14 @@ export const BingoProvider = ({ children }) => {
       // Leer el número en voz alta
       speakNumber(nextNumber);
       
-      // Establecer el número actual
+      // Actualizar otros estados
       setCurrentNumber(nextNumber);
-      
-      // Actualizar la lista de números extraídos en una única operación atómica
-      // Esto asegura que no haya actualizaciones duplicadas
-      setExtractedNumbers(prevExtracted => {
-        // Verificar que el número no esté ya en la lista
-        if (prevExtracted.includes(nextNumber)) {
-          return prevExtracted; // No duplicar
-        }
-        return [...prevExtracted, nextNumber];
-      });
+      setExtractedNumbers(prevExtracted => [...prevExtracted, nextNumber]);
       
       // Devolver los números restantes actualizados
       return prevRemaining.slice(1);
     });
-  }, [pauseGame, speakNumber, setGameStatus]);
+  }, [pauseGame, speakNumber]);
 
   // Iniciar la extracción automática de números
   const startNumberExtraction = useCallback(() => {
@@ -327,22 +316,13 @@ export const BingoProvider = ({ children }) => {
 
   // Reanudar la partida
   const resumeGame = useCallback(() => {
-    // Si hay ganadores de línea, cerrar la fase de líneas
-    if (prizeConfig.hasLineWinner) {
-      setLinesClosed(true);
-      notification.warning({
-        message: 'Fase de líneas cerrada',
-        description: 'Ya no se pueden registrar más ganadores de línea',
-      });
-    }
-    
     startNumberExtraction();
     
     notification.success({
       message: 'Partida reanudada',
       description: 'Se ha reanudado la extracción de números',
     });
-  }, [startNumberExtraction, prizeConfig.hasLineWinner]);
+  }, [startNumberExtraction]);
   
   // Función para configurar los premios al iniciar el juego - convertida a useCallback
   const configurePrizes = useCallback((config) => {
@@ -401,7 +381,6 @@ export const BingoProvider = ({ children }) => {
     setCurrentNumber(null);
     setGameActive(true);
     setGameStatus('paused'); // Empezamos en pausa para permitir configuración adicional
-    setLinesClosed(false); // Reiniciar estado de líneas cerradas al iniciar nueva partida
     
     notification.success({
       message: 'Juego iniciado',
@@ -471,11 +450,6 @@ export const BingoProvider = ({ children }) => {
   // Registrar un ganador
   const registerWinner = useCallback((type, cardNumber) => {
     if (type === 'line') {
-      // Si las líneas están cerradas, no registrar ganador
-      if (linesClosed) {
-        return false;
-      }
-      
       // Verificar si ya hay un ganador de línea
       if (prizeConfig.hasLineWinner) {
         // Si ya hay un ganador, marcar como múltiples ganadores
@@ -492,7 +466,6 @@ export const BingoProvider = ({ children }) => {
           lineWinners: [cardNumber]
         }));
       }
-      return true;
     } else if (type === 'bingo') {
       // Verificar si ya hay un ganador de bingo
       if (prizeConfig.hasBingoWinner) {
@@ -510,13 +483,11 @@ export const BingoProvider = ({ children }) => {
           bingoWinners: [cardNumber]
         }));
       }
-      return true;
     }
-    return false;
-  }, [prizeConfig, linesClosed]);
+  }, [prizeConfig]);
 
   // Función para validar cartones - modificada para incluir premios y callback
-  const validateCard = useCallback((seed, cardNumber, validationType, callback, noRegister = false) => {
+  const validateCard = useCallback((seed, cardNumber, validationType, callback) => {
     setIsValidating(true);
     
     // Simulamos un pequeño delay para que parezca que está procesando
@@ -527,19 +498,6 @@ export const BingoProvider = ({ children }) => {
             hasLine: false,
             hasBingo: false,
             message: 'La serie o el número de cartón son inválidos'
-          };
-          setValidationResult(result);
-          if (callback) callback(result);
-          return;
-        }
-        
-        // Si está en fase de líneas y las líneas están cerradas, mostrar error
-        if (validationType === 'line' && linesClosed) {
-          const result = {
-            hasLine: false,
-            hasBingo: false,
-            message: 'La fase de líneas está cerrada. Ya no se pueden registrar más líneas.',
-            isLinesClosed: true
           };
           setValidationResult(result);
           if (callback) callback(result);
@@ -601,37 +559,30 @@ export const BingoProvider = ({ children }) => {
         // Determinar el resultado según el tipo de validación
         if (validationType === 'line') {
           if (result.hasLine) {
-            // Si noRegister es true, no registramos el ganador
-            const registered = noRegister ? true : registerWinner('line', cardNumber);
-            if (!registered) {
-              result.message = '⚠️ No se puede registrar línea: la fase de líneas está cerrada';
-              result.prize = 0;
+            // Registrar ganador de línea y calcular premio
+            registerWinner('line', cardNumber);
+            const linePrize = calculatePrize('line');
+            result.prize = linePrize;
+            
+            // Si hay múltiples ganadores, dividir el premio
+            if (prizeConfig.hasMultipleLineWinners) {
+              result.prize = linePrize / prizeConfig.lineWinners.length;
+              result.message = `¡Línea válida! Premio compartido: ${result.prize.toFixed(2)}€ (${prizeConfig.lineWinners.length} ganadores)`;
             } else {
-              const linePrize = calculatePrize('line');
-              result.prize = linePrize;
-              
-              // Si hay múltiples ganadores, dividir el premio
-              if (!noRegister && prizeConfig.hasMultipleLineWinners) {
-                result.prize = linePrize / prizeConfig.lineWinners.length;
-                result.message = `¡Línea válida! Premio compartido: ${result.prize.toFixed(2)}€ (${prizeConfig.lineWinners.length} ganadores)`;
-              } else {
-                result.message = `¡Línea válida! Premio: ${linePrize.toFixed(2)}€`;
-              }
+              result.message = `¡Línea válida! Premio: ${linePrize.toFixed(2)}€`;
             }
           } else {
             result.message = '❌ Este cartón no tiene línea con los números extraídos';
           }
         } else if (validationType === 'bingo') {
           if (result.hasBingo) {
-            // Si noRegister es true, no registramos el ganador
-            if (!noRegister) {
-              registerWinner('bingo', cardNumber);
-            }
+            // Registrar ganador de bingo y calcular premio
+            registerWinner('bingo', cardNumber);
             const bingoPrize = calculatePrize('bingo');
             result.prize = bingoPrize;
             
             // Si hay múltiples ganadores, dividir el premio
-            if (!noRegister && prizeConfig.hasMultipleBingoWinners) {
+            if (prizeConfig.hasMultipleBingoWinners) {
               result.prize = bingoPrize / prizeConfig.bingoWinners.length;
               result.message = `¡Bingo válido! Premio compartido: ${result.prize.toFixed(2)}€ (${prizeConfig.bingoWinners.length} ganadores)`;
             } else {
@@ -656,32 +607,7 @@ export const BingoProvider = ({ children }) => {
         setIsValidating(false);
       }
     }, 1000);
-  }, [extractedNumbers, calculatePrize, registerWinner, prizeConfig, linesClosed]);
-
-  // Función para registrar múltiples ganadores
-  const registerMultipleWinners = useCallback((type, cardNumbers) => {
-    if (type === 'line' && linesClosed) {
-      return false;
-    }
-    
-    if (type === 'line') {
-      setPrizeConfig(prev => ({
-        ...prev,
-        hasLineWinner: true,
-        hasMultipleLineWinners: cardNumbers.length > 1 || prev.lineWinners.length > 0,
-        lineWinners: [...new Set([...prev.lineWinners, ...cardNumbers])]
-      }));
-    } else if (type === 'bingo') {
-      setPrizeConfig(prev => ({
-        ...prev,
-        hasBingoWinner: true,
-        hasMultipleBingoWinners: cardNumbers.length > 1 || prev.bingoWinners.length > 0,
-        bingoWinners: [...new Set([...prev.bingoWinners, ...cardNumbers])]
-      }));
-    }
-    
-    return true;
-  }, [linesClosed]);
+  }, [extractedNumbers, calculatePrize, registerWinner, prizeConfig]);
 
   // Valores del contexto
   const contextValue = {
@@ -699,7 +625,6 @@ export const BingoProvider = ({ children }) => {
     currentNumber,
     remainingNumbers,
     intervalTime,
-    linesClosed,
     
     // Funciones del juego de bingo
     startNewGame,
@@ -718,7 +643,6 @@ export const BingoProvider = ({ children }) => {
     validationResult,
     isValidating,
     setValidationResult,
-    registerMultipleWinners,
     
     // Configuración de premios
     prizeConfig,
