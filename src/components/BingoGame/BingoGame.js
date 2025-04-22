@@ -144,28 +144,38 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
     soldCards: prizeConfig.soldCards || 0,
     cardPrice: prizeConfig.cardPrice || 5.00,
     linePercentage: prizeConfig.linePercentage || 15,
-    bingoPercentage: prizeConfig.bingoPercentage || 50
+    bingoPercentage: prizeConfig.bingoPercentage || 50,
+    totalPrizePercentage: prizeConfig.totalPrizePercentage || 100
   });
   
   // Calcular el bote total
   const totalPot = formData.soldCards * formData.cardPrice;
-  const linePrize = totalPot * (formData.linePercentage / 100);
-  const bingoPrize = totalPot * (formData.bingoPercentage / 100);
+  const adjustmentFactor = formData.totalPrizePercentage / 100;
+  const linePrize = totalPot * (formData.linePercentage / 100) * adjustmentFactor;
+  const bingoPrize = totalPot * (formData.bingoPercentage / 100) * adjustmentFactor;
+  
+  // Calcular porcentaje total actual (suma de línea y bingo)
+  const currentDistributionSum = formData.linePercentage + formData.bingoPercentage;
   
   const handleInputChange = (field, value) => {
-    const newData = { ...formData, [field]: value };
-    setFormData(newData);
+    const newData = { ...formData };
     
-    // Solo actualizar el contexto si los valores son válidos
-    if (field === 'linePercentage' || field === 'bingoPercentage') {
-      const sumPercentage = (field === 'linePercentage' ? value : formData.linePercentage) + 
-                           (field === 'bingoPercentage' ? value : formData.bingoPercentage);
-      if (sumPercentage <= 100) {
-        updatePrizeConfig(newData);
-      }
-    } else {
-      updatePrizeConfig(newData);
+    // Actualizar el campo con el nuevo valor
+    newData[field] = value;
+    
+    // Lógica especial para ajustar automáticamente los porcentajes
+    if (field === 'linePercentage') {
+      // Si cambia el porcentaje de línea, ajustar el de bingo para que sumen 100%
+      const difference = currentDistributionSum - value;
+      newData.bingoPercentage = Math.max(30, difference); // Mínimo 30% para bingo
+    } else if (field === 'bingoPercentage') {
+      // Si cambia el porcentaje de bingo, ajustar el de línea para que sumen 100%
+      const difference = currentDistributionSum - value;
+      newData.linePercentage = Math.max(5, difference); // Mínimo 5% para línea
     }
+    
+    setFormData(newData);
+    updatePrizeConfig(newData);
   };
   
   return (
@@ -203,10 +213,42 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
               disabled={disabled}
             />
           </Form.Item>
+          
+          <Form.Item 
+            label={
+              <Space>
+                <span>Porcentaje total a repartir (%)</span>
+                <Text type="secondary">{formData.totalPrizePercentage}%</Text>
+              </Space>
+            }
+          >
+            <Slider 
+              min={10}
+              max={100}
+              step={5}
+              value={formData.totalPrizePercentage}
+              onChange={(value) => handleInputChange('totalPrizePercentage', value)}
+              disabled={disabled}
+              marks={{ 
+                10: '10%', 
+                50: '50%', 
+                100: '100%' 
+              }}
+            />
+          </Form.Item>
         </Col>
         
         <Col xs={24} md={12}>
           <Title level={5}>Distribución de premios</Title>
+          
+          <Statistic 
+            title="Bote total recaudado"
+            value={totalPot.toFixed(2)}
+            suffix="€"
+            valueStyle={{ color: '#52c41a' }}
+          />
+          
+          <Divider />
           
           <Form.Item 
             label={
@@ -242,12 +284,15 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
             />
           </Form.Item>
           
-          <Statistic 
-            title="Bote total recaudado"
-            value={totalPot.toFixed(2)}
-            suffix="€"
-            valueStyle={{ color: '#52c41a' }}
-          />
+          <div className="distribution-info">
+            <Text type="secondary">
+              Distribución actual: {formData.linePercentage}% línea + {formData.bingoPercentage}% bingo = {currentDistributionSum}%
+            </Text>
+            <br />
+            <Text type="secondary">
+              Total repartido: {(totalPot * (formData.totalPrizePercentage / 100)).toFixed(2)}€ ({formData.totalPrizePercentage}% del bote)
+            </Text>
+          </div>
         </Col>
       </Row>
     </Form>

@@ -135,6 +135,7 @@ export const BingoProvider = ({ children }) => {
     cardPrice: 5.00,     // Precio por cartón
     linePercentage: 15,  // Porcentaje para premio línea (15% por defecto)
     bingoPercentage: 50, // Porcentaje para premio bingo (50% por defecto)
+    totalPrizePercentage: 100, // Porcentaje total a repartir (100% por defecto)
     hasLineWinner: false, // Indica si ya hay ganador de línea
     hasMultipleLineWinners: false, // Indica si hay múltiples ganadores de línea
     lineWinners: [],     // Cartones ganadores de línea
@@ -428,17 +429,18 @@ export const BingoProvider = ({ children }) => {
 
   // Calcular premios
   const calculatePrize = useCallback((type) => {
-    const { soldCards, cardPrice, linePercentage, bingoPercentage } = prizeConfig;
+    const { soldCards, cardPrice, linePercentage, bingoPercentage, totalPrizePercentage } = prizeConfig;
     
     if (!soldCards || !cardPrice) return 0;
     
     const totalPot = soldCards * cardPrice;
+    const adjustmentFactor = totalPrizePercentage / 100;
     
     if (type === 'line') {
-      const linePrize = totalPot * (linePercentage / 100);
+      const linePrize = totalPot * (linePercentage / 100) * adjustmentFactor;
       return linePrize;
     } else if (type === 'bingo') {
-      const bingoPrize = totalPot * (bingoPercentage / 100);
+      const bingoPrize = totalPot * (bingoPercentage / 100) * adjustmentFactor;
       return bingoPrize;
     }
     
