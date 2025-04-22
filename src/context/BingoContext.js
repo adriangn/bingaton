@@ -127,6 +127,21 @@ export const BingoProvider = ({ children }) => {
     enabled: true,      // Habilitar/deshabilitar el sonido
     announceDigits: true // Anunciar dígitos individualmente
   });
+  
+  // Estado para configuración de premios
+  const [prizeConfig, setPrizeConfig] = useState({
+    seriesInfo: '',      // Serie de los cartones
+    soldCards: 0,        // Cantidad de cartones vendidos
+    cardPrice: 5.00,     // Precio por cartón
+    linePercentage: 15,  // Porcentaje para premio línea (15% por defecto)
+    bingoPercentage: 50, // Porcentaje para premio bingo (50% por defecto)
+    hasLineWinner: false, // Indica si ya hay ganador de línea
+    hasMultipleLineWinners: false, // Indica si hay múltiples ganadores de línea
+    lineWinners: [],     // Cartones ganadores de línea
+    hasBingoWinner: false, // Indica si ya hay ganador de bingo
+    hasMultipleBingoWinners: false, // Indica si hay múltiples ganadores de bingo
+    bingoWinners: [],    // Cartones ganadores de bingo
+  });
 
   // Referencias para los temporizadores
   const intervalRef = useRef(null);
@@ -308,36 +323,7 @@ export const BingoProvider = ({ children }) => {
     });
   }, [startNumberExtraction]);
   
-  // Iniciar una nueva partida de bingo
-  const startNewGame = useCallback(() => {
-    // Generar un array con todos los números posibles (1-90)
-    const allNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
-    
-    // Desordenar el array para simular el bombo
-    const shuffledNumbers = [...allNumbers];
-    for (let i = shuffledNumbers.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledNumbers[i], shuffledNumbers[j]] = [shuffledNumbers[j], shuffledNumbers[i]];
-    }
-    
-    setRemainingNumbers(shuffledNumbers);
-    setExtractedNumbers([]);
-    setCurrentNumber(null);
-    setGameStatus('running');
-    setGameActive(true);
-    
-    // Iniciar la extracción automática de números
-    setTimeout(() => {
-      startNumberExtraction();
-    }, 100);
-    
-    notification.success({
-      message: 'Partida iniciada',
-      description: 'Se ha iniciado una nueva partida de bingo',
-    });
-  }, [startNumberExtraction]);
-
-  // Terminar la partida
+  // Terminar la partida - movido antes de startNewGame
   const endGame = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -353,6 +339,39 @@ export const BingoProvider = ({ children }) => {
       description: 'Se ha terminado la partida actual',
     });
   }, []);
+  
+  // Iniciar una nueva partida de bingo
+  const startNewGame = useCallback((prizeSettings = null) => {
+    // Si hay un juego activo, terminarlo primero
+    if (gameActive) {
+      endGame();
+    }
+    
+    // Configurar los premios si se proporcionan
+    if (prizeSettings) {
+      configurePrizes(prizeSettings);
+    }
+    
+    // Generar array con números del 1 al 90
+    const numbers = Array.from({ length: 90 }, (_, i) => i + 1);
+    
+    // Mezclar aleatoriamente los números
+    for (let i = numbers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+    }
+    
+    setRemainingNumbers(numbers);
+    setExtractedNumbers([]);
+    setCurrentNumber(null);
+    setGameActive(true);
+    setGameStatus('paused'); // Empezamos en pausa para permitir configuración adicional
+    
+    notification.success({
+      message: 'Juego iniciado',
+      description: 'Presiona "Reanudar" para comenzar a extraer números.',
+    });
+  }, [gameActive, endGame]);
 
   // Cambiar el intervalo de tiempo entre números
   const changeIntervalTime = useCallback((seconds) => {
@@ -433,75 +452,183 @@ export const BingoProvider = ({ children }) => {
     return true;
   }, []);
 
-  // Función para validar un cartón según su serie y número
-  const validateCard = useCallback((seed, cardNumber, validationType = 'both') => {
-    setIsValidating(true);
-    setValidationResult(null);
+  // Función para configurar los premios al iniciar el juego
+  const configurePrizes = (config) => {
+    setPrizeConfig({
+      ...prizeConfig,
+      ...config,
+      hasLineWinner: false,
+      hasMultipleLineWinners: false,
+      lineWinners: [],
+      hasBingoWinner: false,
+      hasMultipleBingoWinners: false,
+      bingoWinners: [],
+    });
+  };
+  
+  // Calcular premios
+  const calculatePrize = useCallback((type) => {
+    const { soldCards, cardPrice, linePercentage, bingoPercentage } = prizeConfig;
     
-    try {
-      // Generar el cartón a validar
-      const card = generateSpecificCard(seed, cardNumber);
-      
-      if (!card) {
-        throw new Error('No se pudo generar el cartón con los datos proporcionados');
+    if (!soldCards || !cardPrice) return 0;
+    
+    const totalPot = soldCards * cardPrice;
+    
+    if (type === 'line') {
+      const linePrize = totalPot * (linePercentage / 100);
+      return linePrize;
+    } else if (type === 'bingo') {
+      const bingoPrize = totalPot * (bingoPercentage / 100);
+      return bingoPrize;
+    }
+    
+    return 0;
+  }, [prizeConfig]);
+  
+  // Registrar un ganador
+  const registerWinner = useCallback((type, cardNumber) => {
+    if (type === 'line') {
+      // Verificar si ya hay un ganador de línea
+      if (prizeConfig.hasLineWinner) {
+        // Si ya hay un ganador, marcar como múltiples ganadores
+        setPrizeConfig(prev => ({
+          ...prev,
+          hasMultipleLineWinners: true,
+          lineWinners: [...prev.lineWinners, cardNumber]
+        }));
+      } else {
+        // Registrar primer ganador de línea
+        setPrizeConfig(prev => ({
+          ...prev,
+          hasLineWinner: true,
+          lineWinners: [cardNumber]
+        }));
       }
-      
-      // Verificar según el tipo de validación
-      let hasLine = false;
-      let lineNumber = -1;
-      let hasBingo = false;
-      
-      // Verificar líneas
-      if (validationType === 'line' || validationType === 'both') {
-        for (let i = 0; i < 3; i++) {
-          if (checkLine(card[i], extractedNumbers)) {
-            hasLine = true;
-            lineNumber = i + 1;
+    } else if (type === 'bingo') {
+      // Verificar si ya hay un ganador de bingo
+      if (prizeConfig.hasBingoWinner) {
+        // Si ya hay un ganador, marcar como múltiples ganadores
+        setPrizeConfig(prev => ({
+          ...prev,
+          hasMultipleBingoWinners: true,
+          bingoWinners: [...prev.bingoWinners, cardNumber]
+        }));
+      } else {
+        // Registrar primer ganador de bingo
+        setPrizeConfig(prev => ({
+          ...prev,
+          hasBingoWinner: true,
+          bingoWinners: [cardNumber]
+        }));
+      }
+    }
+  }, [prizeConfig]);
+
+  // Función para validar cartones - modificada para incluir premios
+  const validateCard = useCallback((seed, cardNumber, validationType) => {
+    setIsValidating(true);
+    
+    // Simulamos un pequeño delay para que parezca que está procesando
+    setTimeout(() => {
+      try {
+        if (!seed || !cardNumber) {
+          throw new Error('La serie o el número de cartón son inválidos');
+        }
+        
+        // Creamos el generador aleatorio con la semilla
+        const randomGenerator = new SeededRandom(seed);
+        
+        // Generamos el cartón a partir de la semilla y el número de cartón
+        // Necesitamos generar todos los cartones anteriores para mantener la secuencia
+        let targetCard = null;
+        for (let i = 1; i <= cardNumber; i++) {
+          const card = generateSpanishBingoCard(randomGenerator);
+          if (i === cardNumber) {
+            targetCard = card;
+          }
+        }
+        
+        if (!targetCard) {
+          throw new Error('No se pudo generar el cartón correctamente');
+        }
+        
+        // Comprobar si hay línea o bingo
+        const result = {
+          card: targetCard,
+          cardNumber: cardNumber,
+          hasLine: false,
+          hasBingo: false,
+          lineNumber: null,
+          prize: 0,
+          message: ''
+        };
+        
+        // Comprobar si hay línea
+        for (let row = 0; row < 3; row++) {
+          const rowNumbers = targetCard[row].filter(n => n !== null);
+          const allNumbersInRowExtracted = rowNumbers.every(n => extractedNumbers.includes(n));
+          
+          if (allNumbersInRowExtracted) {
+            result.hasLine = true;
+            result.lineNumber = row + 1;
             break;
           }
         }
+        
+        // Comprobar si hay bingo
+        const allNumbers = targetCard.flat().filter(n => n !== null);
+        const allExtracted = allNumbers.every(n => extractedNumbers.includes(n));
+        result.hasBingo = allExtracted;
+        
+        // Determinar el resultado según el tipo de validación
+        if (validationType === 'line') {
+          if (result.hasLine) {
+            // Registrar ganador de línea y calcular premio
+            registerWinner('line', cardNumber);
+            const linePrize = calculatePrize('line');
+            result.prize = linePrize;
+            
+            // Si hay múltiples ganadores, dividir el premio
+            if (prizeConfig.hasMultipleLineWinners) {
+              result.prize = linePrize / prizeConfig.lineWinners.length;
+              result.message = `¡Línea válida! Premio compartido: ${result.prize.toFixed(2)}€ (${prizeConfig.lineWinners.length} ganadores)`;
+            } else {
+              result.message = `¡Línea válida! Premio: ${linePrize.toFixed(2)}€`;
+            }
+          } else {
+            result.message = '❌ Este cartón no tiene línea con los números extraídos';
+          }
+        } else if (validationType === 'bingo') {
+          if (result.hasBingo) {
+            // Registrar ganador de bingo y calcular premio
+            registerWinner('bingo', cardNumber);
+            const bingoPrize = calculatePrize('bingo');
+            result.prize = bingoPrize;
+            
+            // Si hay múltiples ganadores, dividir el premio
+            if (prizeConfig.hasMultipleBingoWinners) {
+              result.prize = bingoPrize / prizeConfig.bingoWinners.length;
+              result.message = `¡Bingo válido! Premio compartido: ${result.prize.toFixed(2)}€ (${prizeConfig.bingoWinners.length} ganadores)`;
+            } else {
+              result.message = `¡Bingo válido! Premio: ${bingoPrize.toFixed(2)}€`;
+            }
+          } else {
+            result.message = '❌ Este cartón no tiene bingo con los números extraídos';
+          }
+        }
+        
+        setValidationResult(result);
+      } catch (error) {
+        setValidationResult({
+          hasLine: false,
+          hasBingo: false,
+          message: `Error: ${error.message}`
+        });
+      } finally {
+        setIsValidating(false);
       }
-      
-      // Verificar bingo
-      if (validationType === 'bingo' || validationType === 'both') {
-        hasBingo = checkBingo(card, extractedNumbers);
-      }
-      
-      // Preparar el resultado
-      const result = {
-        card,
-        seed,
-        cardNumber,
-        hasLine,
-        lineNumber,
-        hasBingo,
-        extractedNumbers: [...extractedNumbers],
-        message: ''
-      };
-      
-      // Mensaje según el resultado
-      if (hasBingo) {
-        result.message = '¡BINGO! El cartón tiene todos los números marcados.';
-      } else if (hasLine) {
-        result.message = `¡LÍNEA! Línea completa en la fila ${lineNumber}.`;
-      } else {
-        result.message = 'El cartón no tiene línea ni bingo con los números extraídos.';
-      }
-      
-      setValidationResult(result);
-      return result;
-    } catch (error) {
-      const errorResult = {
-        hasLine: false,
-        hasBingo: false,
-        message: `Error: ${error.message || 'No se pudo validar el cartón'}`
-      };
-      setValidationResult(errorResult);
-      return errorResult;
-    } finally {
-      setIsValidating(false);
-    }
-  }, [generateSpecificCard, checkLine, checkBingo, extractedNumbers]);
+    }, 1000);
+  }, [extractedNumbers, calculatePrize, registerWinner, prizeConfig]);
 
   // Valores del contexto
   const contextValue = {
@@ -536,7 +663,12 @@ export const BingoProvider = ({ children }) => {
     validateCard,
     validationResult,
     isValidating,
-    setValidationResult
+    setValidationResult,
+    
+    // Configuración de premios
+    prizeConfig,
+    configurePrizes,
+    calculatePrize,
   };
 
   return (

@@ -99,4 +99,41 @@
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(24, 144, 255, 0);
   }
+}
+
+.prize-settings-form {
+  margin-bottom: 16px;
+}
+
+.prize-row {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.prize-info {
+  margin: 16px 0;
+  padding: 12px;
+  background-color: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 4px;
+}
+
+.settings-card {
+  margin: 16px 0;
+}
+
+.checker-container {
+  margin: 16px 0;
+}
+
+.game-setup {
+  padding: 20px 0;
+}
+
+.start-game-container {
+  margin-top: 24px;
+  text-align: center;
 } 

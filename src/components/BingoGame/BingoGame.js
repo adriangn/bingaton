@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Button, Typography, Divider, Space, InputNumber, Statistic, Row, Col, Switch, Slider, Form, Tabs } from 'antd';
-import { PlayCircleOutlined, PauseCircleOutlined, StopOutlined, CheckSquareOutlined, SettingOutlined } from '@ant-design/icons';
+import { Card, Button, Typography, Divider, Space, InputNumber, Statistic, Row, Col, Switch, Slider, Form, Tabs, Input } from 'antd';
+import { PlayCircleOutlined, PauseCircleOutlined, StopOutlined, CheckSquareOutlined, SettingOutlined, DollarOutlined } from '@ant-design/icons';
 import { useBingo } from '../../context/BingoContext';
 import BingoCardChecker from '../BingoCardChecker';
 import './BingoGame.css';
@@ -137,6 +137,123 @@ const BingoSettings = ({ voiceConfig, updateVoiceConfig, disabled, intervalTime,
   );
 };
 
+// Componente para la configuración de premios
+const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
+  const [formData, setFormData] = useState({
+    seriesInfo: prizeConfig.seriesInfo || '',
+    soldCards: prizeConfig.soldCards || 0,
+    cardPrice: prizeConfig.cardPrice || 5.00,
+    linePercentage: prizeConfig.linePercentage || 15,
+    bingoPercentage: prizeConfig.bingoPercentage || 50
+  });
+  
+  // Calcular el bote total
+  const totalPot = formData.soldCards * formData.cardPrice;
+  const linePrize = totalPot * (formData.linePercentage / 100);
+  const bingoPrize = totalPot * (formData.bingoPercentage / 100);
+  
+  const handleInputChange = (field, value) => {
+    const newData = { ...formData, [field]: value };
+    setFormData(newData);
+    
+    // Solo actualizar el contexto si los valores son válidos
+    if (field === 'linePercentage' || field === 'bingoPercentage') {
+      const sumPercentage = (field === 'linePercentage' ? value : formData.linePercentage) + 
+                           (field === 'bingoPercentage' ? value : formData.bingoPercentage);
+      if (sumPercentage <= 100) {
+        updatePrizeConfig(newData);
+      }
+    } else {
+      updatePrizeConfig(newData);
+    }
+  };
+  
+  return (
+    <Form layout="vertical" className="prize-settings-form">
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={12}>
+          <Form.Item label="Serie de los cartones">
+            <Input 
+              placeholder="Ej: A-1000000"
+              value={formData.seriesInfo}
+              onChange={(e) => handleInputChange('seriesInfo', e.target.value)}
+              disabled={disabled}
+            />
+          </Form.Item>
+          
+          <Form.Item label="Cartones vendidos">
+            <InputNumber 
+              min={0}
+              step={12}
+              style={{ width: '100%' }}
+              value={formData.soldCards}
+              onChange={(value) => handleInputChange('soldCards', value)}
+              disabled={disabled}
+            />
+          </Form.Item>
+          
+          <Form.Item label="Precio por cartón (€)">
+            <InputNumber 
+              min={0}
+              step={0.5}
+              precision={2}
+              style={{ width: '100%' }}
+              value={formData.cardPrice}
+              onChange={(value) => handleInputChange('cardPrice', value)}
+              disabled={disabled}
+            />
+          </Form.Item>
+        </Col>
+        
+        <Col xs={24} md={12}>
+          <Title level={5}>Distribución de premios</Title>
+          
+          <Form.Item 
+            label={
+              <Space>
+                <span>Premio para Línea (%)</span>
+                <Text type="secondary">{formData.linePercentage}% → {linePrize.toFixed(2)}€</Text>
+              </Space>
+            }
+          >
+            <Slider 
+              min={5}
+              max={50}
+              value={formData.linePercentage}
+              onChange={(value) => handleInputChange('linePercentage', value)}
+              disabled={disabled}
+            />
+          </Form.Item>
+          
+          <Form.Item 
+            label={
+              <Space>
+                <span>Premio para Bingo (%)</span>
+                <Text type="secondary">{formData.bingoPercentage}% → {bingoPrize.toFixed(2)}€</Text>
+              </Space>
+            }
+          >
+            <Slider 
+              min={30}
+              max={80}
+              value={formData.bingoPercentage}
+              onChange={(value) => handleInputChange('bingoPercentage', value)}
+              disabled={disabled}
+            />
+          </Form.Item>
+          
+          <Statistic 
+            title="Bote total recaudado"
+            value={totalPot.toFixed(2)}
+            suffix="€"
+            valueStyle={{ color: '#52c41a' }}
+          />
+        </Col>
+      </Row>
+    </Form>
+  );
+};
+
 const BingoGame = () => {
   const {
     gameActive,
@@ -151,7 +268,9 @@ const BingoGame = () => {
     endGame,
     changeIntervalTime,
     voiceConfig,
-    updateVoiceConfig
+    updateVoiceConfig,
+    prizeConfig,
+    configurePrizes
   } = useBingo();
 
   // Estado para controlar las pestañas y visibilidad de configuración
@@ -184,6 +303,11 @@ const BingoGame = () => {
         })}
       </div>
     );
+  };
+
+  // Iniciar un nuevo juego con la configuración actual
+  const handleStartNewGame = () => {
+    startNewGame();
   };
 
   return (
@@ -250,114 +374,106 @@ const BingoGame = () => {
                 onClick={endGame}
                 size="large"
               >
-                Terminar Partida
+                Terminar
               </Button>
-
+              
               <Button
                 icon={<SettingOutlined />}
                 onClick={() => setShowSettings(!showSettings)}
                 size="large"
-                type={showSettings ? 'primary' : 'default'}
               >
                 Configuración
               </Button>
             </Space>
           </div>
-
-          <Divider />
           
           {showSettings && (
-            <>
-              <BingoSettings 
-                voiceConfig={voiceConfig}
-                updateVoiceConfig={updateVoiceConfig}
-                disabled={gameStatus === 'finished'}
-                intervalTime={intervalTime}
-                changeIntervalTime={changeIntervalTime}
-                isRunning={gameStatus === 'running'}
-              />
-              <Divider />
-            </>
+            <Card className="settings-card">
+              <Tabs defaultActiveKey="voice">
+                <TabPane tab="Voz" key="voice">
+                  <BingoSettings 
+                    voiceConfig={voiceConfig}
+                    updateVoiceConfig={updateVoiceConfig}
+                    disabled={gameStatus === 'running'}
+                    intervalTime={intervalTime}
+                    changeIntervalTime={changeIntervalTime}
+                    isRunning={gameStatus === 'running'}
+                  />
+                </TabPane>
+                <TabPane tab="Premios" key="prizes">
+                  <PrizeSettings 
+                    prizeConfig={prizeConfig}
+                    updatePrizeConfig={configurePrizes}
+                    disabled={gameStatus === 'running'}
+                  />
+                </TabPane>
+              </Tabs>
+            </Card>
           )}
           
-          <Tabs 
-            activeKey={activeTab} 
-            onChange={setActiveTab}
-            className="bingo-tabs"
-          >
-            <TabPane 
-              tab={<span><PlayCircleOutlined />Tablero</span>} 
-              key="board"
-            >
-              <Divider orientation="left">Números Extraídos</Divider>
-              {renderExtractedNumbers()}
+          {gameStatus === 'paused' && (
+            <div className="checker-container">
+              <Divider orientation="left">Comprobar cartones</Divider>
+              <BingoCardChecker />
+            </div>
+          )}
+          
+          <Divider orientation="left">Tablero de números</Divider>
+          {renderExtractedNumbers()}
+        </div>
+      ) : (
+        <div className="game-setup">
+          <Title level={4}>Configuración del Juego</Title>
+          
+          <Tabs defaultActiveKey="basic" onChange={setActiveTab}>
+            <TabPane tab="Básica" key="basic">
+              <Form layout="vertical" className="setup-form">
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} md={12}>
+                    <Form.Item label="Intervalo entre números (segundos)">
+                      <Slider
+                        min={1}
+                        max={20}
+                        onChange={changeIntervalTime}
+                        value={intervalTime}
+                      />
+                      <Text type="secondary">{intervalTime} segundos</Text>
+                    </Form.Item>
+                  </Col>
+                  
+                  <Col xs={24} md={12}>
+                    <BingoSettings 
+                      voiceConfig={voiceConfig}
+                      updateVoiceConfig={updateVoiceConfig}
+                      disabled={false}
+                      intervalTime={intervalTime}
+                      changeIntervalTime={changeIntervalTime}
+                      isRunning={false}
+                    />
+                  </Col>
+                </Row>
+              </Form>
             </TabPane>
             
-            <TabPane 
-              tab={<span><CheckSquareOutlined />Comprobar Cartones</span>} 
-              key="checker"
-              disabled={extractedNumbers.length === 0}
-            >
-              <BingoCardChecker />
+            <TabPane tab="Premios" key="prizes">
+              <PrizeSettings 
+                prizeConfig={prizeConfig}
+                updatePrizeConfig={configurePrizes}
+                disabled={false}
+              />
             </TabPane>
           </Tabs>
           
-          {gameStatus === 'paused' && activeTab === 'board' && (
-            <div className="validation-actions">
-              <Divider />
-              <Title level={4}>Para comprobar ganadores:</Title>
-              <Space size="middle">
-                <Button 
-                  type="primary" 
-                  icon={<CheckSquareOutlined />}
-                  onClick={() => setActiveTab('checker')}
-                >
-                  Ir a Comprobar Cartones
-                </Button>
-              </Space>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="start-game">
-          <Title level={4}>Iniciar una nueva partida de bingo</Title>
-          <Text>
-            Configura las opciones del juego y pulsa Iniciar Partida para comenzar a sacar números automáticamente.
-            Podrás pausar en cualquier momento para comprobar líneas y bingos.
-          </Text>
-
-          <Button 
-            type="primary" 
-            icon={<SettingOutlined />}
-            onClick={() => setShowSettings(!showSettings)}
-            style={{ margin: '16px 0' }}
-          >
-            {showSettings ? 'Ocultar Configuración' : 'Mostrar Configuración'}
-          </Button>
-
-          {showSettings && (
-            <>
-              <Divider />
-              <BingoSettings 
-                voiceConfig={voiceConfig}
-                updateVoiceConfig={updateVoiceConfig}
-                disabled={false}
-                intervalTime={intervalTime}
-                changeIntervalTime={changeIntervalTime}
-                isRunning={false}
-              />
-            </>
-          )}
-          
-          <Button 
-            type="primary" 
-            icon={<PlayCircleOutlined />} 
-            onClick={startNewGame}
-            size="large"
-            style={{ marginTop: 20 }}
-          >
-            Iniciar Partida
-          </Button>
+          <div className="start-game-container">
+            <Button 
+              type="primary" 
+              icon={<PlayCircleOutlined />} 
+              onClick={handleStartNewGame}
+              size="large"
+            >
+              Iniciar Partida
+            </Button>
+          </div>
         </div>
       )}
     </Card>

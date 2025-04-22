@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Alert, Typography, Divider, Row, Col, Badge, Spin } from 'antd';
-import { CheckOutlined, CloseOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, Space, Alert, Typography, Divider, Row, Col, Badge, Spin, Statistic } from 'antd';
+import { CheckOutlined, CloseOutlined, SearchOutlined, ReloadOutlined, TrophyOutlined } from '@ant-design/icons';
 import { useBingo } from '../../context/BingoContext';
 import './BingoCardChecker.css';
 
@@ -34,7 +34,8 @@ const BingoCardChecker = () => {
     validationResult, 
     isValidating,
     setValidationResult,
-    extractedNumbers
+    extractedNumbers,
+    prizeConfig
   } = useBingo();
   
   const [formData, setFormData] = useState({
@@ -115,6 +116,82 @@ const BingoCardChecker = () => {
     setValidationResult(null);
   };
   
+  // Render del resultado con premios
+  const renderResult = () => {
+    if (!validationResult) return null;
+    
+    return (
+      <div className="validation-result">
+        <Divider />
+        
+        <Alert
+          message={validationResult.message}
+          type={validationResult.hasBingo ? 'success' : 
+               validationResult.hasLine ? 'success' : 
+               validationResult.message.includes('Error') ? 'error' : 'info'}
+          showIcon
+        />
+        
+        {(validationResult.hasLine || validationResult.hasBingo) && validationResult.prize > 0 && (
+          <div className="prize-info">
+            <Row gutter={[16, 16]} className="prize-row">
+              <Col span={24}>
+                <Statistic
+                  title={
+                    <Space>
+                      <TrophyOutlined />
+                      <span>Premio</span>
+                    </Space>
+                  }
+                  value={validationResult.prize.toFixed(2)}
+                  suffix="€"
+                  valueStyle={{ color: '#faad14', fontWeight: 'bold' }}
+                />
+              </Col>
+            </Row>
+
+            {/* Si hay múltiples ganadores, mostrar información */}
+            {validationResult.hasLine && prizeConfig.hasMultipleLineWinners && (
+              <Text type="secondary">
+                Premio compartido entre {prizeConfig.lineWinners.length} ganadores
+              </Text>
+            )}
+            {validationResult.hasBingo && prizeConfig.hasMultipleBingoWinners && (
+              <Text type="secondary">
+                Premio compartido entre {prizeConfig.bingoWinners.length} ganadores
+              </Text>
+            )}
+          </div>
+        )}
+        
+        {validationResult.card && (
+          <div className="card-container">
+            <Divider orientation="left">
+              <Space>
+                <Text>Cartón #{validationResult.cardNumber}</Text>
+                <Badge 
+                  count={validationResult.hasBingo ? 'BINGO' : 
+                        validationResult.hasLine ? 'LÍNEA' : null} 
+                  style={{ 
+                    backgroundColor: validationResult.hasBingo ? '#52c41a' : '#1890ff' 
+                  }}
+                />
+              </Space>
+            </Divider>
+            
+            <CardDisplay card={validationResult.card} />
+            
+            {validationResult.hasLine && !validationResult.hasBingo && (
+              <div className="line-indicator">
+                Línea en la fila {validationResult.lineNumber}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+  
   return (
     <Card className="bingo-card-checker">
       <Title level={4}>Comprobar Cartón</Title>
@@ -184,44 +261,7 @@ const BingoCardChecker = () => {
         </div>
       )}
       
-      {validationResult && (
-        <div className="validation-result">
-          <Divider />
-          
-          <Alert
-            message={validationResult.message}
-            type={validationResult.hasBingo ? 'success' : 
-                 validationResult.hasLine ? 'success' : 
-                 validationResult.message.includes('Error') ? 'error' : 'info'}
-            showIcon
-          />
-          
-          {validationResult.card && (
-            <div className="card-container">
-              <Divider orientation="left">
-                <Space>
-                  <Text>Cartón #{validationResult.cardNumber}</Text>
-                  <Badge 
-                    count={validationResult.hasBingo ? 'BINGO' : 
-                          validationResult.hasLine ? 'LÍNEA' : null} 
-                    style={{ 
-                      backgroundColor: validationResult.hasBingo ? '#52c41a' : '#1890ff' 
-                    }}
-                  />
-                </Space>
-              </Divider>
-              
-              <CardDisplay card={validationResult.card} />
-              
-              {validationResult.hasLine && !validationResult.hasBingo && (
-                <div className="line-indicator">
-                  Línea en la fila {validationResult.lineNumber}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      {renderResult()}
     </Card>
   );
 };

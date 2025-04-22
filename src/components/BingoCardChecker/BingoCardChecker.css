@@ -68,4 +68,17 @@
   padding: 15px;
   border-radius: 4px;
   background-color: #fafafa;
+}
+
+.prize-info {
+  margin: 16px 0;
+  padding: 16px;
+  background-color: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.prize-info .ant-statistic {
+  margin-bottom: 8px;
 } 
