@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Typography, Divider, Space, InputNumber, Statistic, Row, Col, Switch, Slider, Form, Tabs, Input } from 'antd';
-import { PlayCircleOutlined, PauseCircleOutlined, StopOutlined, CheckSquareOutlined, SettingOutlined, DollarOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, PauseCircleOutlined, StopOutlined, SettingOutlined } from '@ant-design/icons';
 import { useBingo } from '../../context/BingoContext';
 import BingoCardChecker from '../BingoCardChecker';
 import './BingoGame.css';
@@ -273,8 +273,7 @@ const BingoGame = () => {
     configurePrizes
   } = useBingo();
 
-  // Estado para controlar las pestañas y visibilidad de configuración
-  const [activeTab, setActiveTab] = useState('board');
+  // Estado para controlar la visibilidad de configuración
   const [showSettings, setShowSettings] = useState(false);
 
   // Renderizar los números extraídos en forma de cuadrícula
@@ -425,7 +424,7 @@ const BingoGame = () => {
         <div className="game-setup">
           <Title level={4}>Configuración del Juego</Title>
           
-          <Tabs defaultActiveKey="basic" onChange={setActiveTab}>
+          <Tabs defaultActiveKey="basic">
             <TabPane tab="Básica" key="basic">
               <Form layout="vertical" className="setup-form">
                 <Row gutter={[16, 16]}>

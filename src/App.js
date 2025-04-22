@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Menu, Typography } from 'antd';
+import { Layout, Menu, Typography, Button } from 'antd';
 import './App.css';
 
 // Importar componentes del juego
@@ -89,7 +89,9 @@ function App() {
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
-          <a onClick={() => setShowLegal(true)} style={{ cursor: 'pointer' }}>Aviso Legal</a>
+          <Button type="link" onClick={() => setShowLegal(true)}>
+            Aviso Legal
+          </Button>
         </Footer>
         <LegalNotice isVisible={showLegal} onClose={() => setShowLegal(false)} />
       </Layout>

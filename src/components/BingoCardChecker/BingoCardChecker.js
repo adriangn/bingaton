@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Form, Input, Button, Space, Alert, Typography, Divider, Row, Col, Badge, Spin, Statistic } from 'antd';
-import { CheckOutlined, CloseOutlined, SearchOutlined, ReloadOutlined, TrophyOutlined } from '@ant-design/icons';
+import { CheckOutlined, SearchOutlined, ReloadOutlined, TrophyOutlined } from '@ant-design/icons';
 import { useBingo } from '../../context/BingoContext';
 import './BingoCardChecker.css';
 

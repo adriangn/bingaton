@@ -371,7 +371,7 @@ export const BingoProvider = ({ children }) => {
       message: 'Juego iniciado',
       description: 'Presiona "Reanudar" para comenzar a extraer números.',
     });
-  }, [gameActive, endGame]);
+  }, [gameActive, endGame, configurePrizes]);
 
   // Cambiar el intervalo de tiempo entre números
   const changeIntervalTime = useCallback((seconds) => {
@@ -410,46 +410,6 @@ export const BingoProvider = ({ children }) => {
       ...prevConfig,
       ...newConfig
     }));
-  }, []);
-
-  // Generar un cartón específico usando una semilla y número de cartón
-  const generateSpecificCard = useCallback((seed, cardNumber) => {
-    if (!seed || cardNumber < 1) {
-      return null;
-    }
-    
-    // Crear un generador con la semilla específica
-    const randomGenerator = new SeededRandom(seed);
-    
-    // Generar cartones hasta llegar al número deseado
-    let card = null;
-    for (let i = 1; i <= cardNumber; i++) {
-      card = generateSpanishBingoCard(randomGenerator);
-    }
-    
-    return card;
-  }, []);
-
-  // Verificar si una fila tiene línea (5 números marcados)
-  const checkLine = useCallback((cardRow, extractedNums) => {
-    // Filtrar los números no nulos de la fila
-    const numbers = cardRow.filter(num => num !== null);
-    // Verificar si todos los números de la fila están extraídos
-    return numbers.every(num => extractedNums.includes(num));
-  }, []);
-
-  // Verificar si el cartón tiene bingo (todas las casillas marcadas)
-  const checkBingo = useCallback((card, extractedNums) => {
-    // Verificar fila por fila
-    for (let row = 0; row < 3; row++) {
-      const rowNumbers = card[row].filter(num => num !== null);
-      // Si hay algún número en la fila que no está extraído, no hay bingo
-      if (!rowNumbers.every(num => extractedNums.includes(num))) {
-        return false;
-      }
-    }
-    // Si todas las filas tienen todos sus números extraídos, hay bingo
-    return true;
   }, []);
 
   // Función para configurar los premios al iniciar el juego
