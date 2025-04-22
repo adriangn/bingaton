@@ -43,11 +43,13 @@ const BingoCardChecker = () => {
   const { 
     validateCard,
     validationResult, 
-    isValidating,
     setValidationResult,
     extractedNumbers,
     prizeConfig
   } = useBingo();
+  
+  // Estado local para controlar la validación
+  const [isValidating, setIsValidating] = useState(false);
   
   const [formData, setFormData] = useState({
     seed: prizeConfig.seriesInfo || '',
@@ -65,7 +67,7 @@ const BingoCardChecker = () => {
         seed: prizeConfig.seriesInfo
       }));
     }
-  }, [prizeConfig.seriesInfo]);
+  }, [prizeConfig.seriesInfo, formData.seed]);
   
   // Manejar cambios en los inputs
   const handleInputChange = (e) => {
