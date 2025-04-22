@@ -19,9 +19,9 @@
   flex-direction: column;
   overflow: hidden;
   border: none;
-  margin: 2.5mm; /* Aumentado de 1.5mm a 2.5mm para reducir el contenido interno */
-  width: calc(100% - 5mm); /* Ajustado de 3mm a 5mm para considerar los márgenes */
-  height: calc(100% - 5mm); /* Ajustado de 3mm a 5mm para considerar los márgenes */
+  margin: 3mm; /* Aumentado a 3mm para reducir el contenido interno */
+  width: calc(100% - 6mm); /* Ajustado para considerar los márgenes */
+  height: calc(100% - 6mm); /* Ajustado para considerar los márgenes */
   background-color: white;
 }
 
@@ -74,11 +74,11 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 0;
-  font-size: 5px; /* Reducido de 6px a 5px */
+  font-size: 5px; /* Tamaño reducido */
   flex: 0 0 auto;
   padding: 0;
-  width: calc(92% - 2mm); /* Ajustado para compensar el padding de la tabla */
-  margin: 0 auto; /* Centrado como la tabla */
+  width: 90%; /* Ancho reducido */
+  margin: 0 auto; /* Centrado */
 }
 
 .print-card-number {
@@ -103,7 +103,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 1mm; /* Añadido padding alrededor de la tabla */
+  padding: 1mm; /* Padding para evitar que la tabla toque los bordes */
   box-sizing: border-box;
 }
 
@@ -112,14 +112,14 @@
   display: flex;
   justify-content: flex-start; 
   align-items: center;
-  font-size: 5px; /* Reducido de 6px a 5px */
+  font-size: 5px;
   font-weight: bold;
   letter-spacing: 0.5px;
   margin-top: 0;
   padding-left: 0;
   margin-left: 0;
-  width: calc(92% - 2mm); /* Ajustado para compensar el padding de la tabla */
-  margin: 0 auto; /* Centrado como la tabla */
+  width: 90%; /* Ancho reducido */
+  margin: 0 auto; /* Centrado */
   text-align: left;
   background-color: white;
   border-radius: 2px;
@@ -127,7 +127,7 @@
 }
 
 .bingo-table {
-  width: 92%; /* Reducido de 100% a 92% */
+  width: 90%; /* Reducido al 90% */
   margin: 0 auto; /* Centrado horizontalmente */
   margin-top: 0;
   border-collapse: collapse;
@@ -136,7 +136,7 @@
 }
 
 .bingo-table tr {
-  height: 33%; /* Volver a aumentar la altura de las filas */
+  height: 31%; /* Reducida la altura de las filas */
 }
 
 .bingo-table td {
@@ -144,7 +144,7 @@
   text-align: center;
   vertical-align: middle;
   font-weight: bold;
-  font-size: 13px; /* Aumentado de 11px a 13px */
+  font-size: 11px; /* Reducido tamaño de fuente */
   width: 11.11%;
   position: relative;
   padding: 0;
@@ -154,7 +154,7 @@
 .bingo-table td:before {
   content: "";
   display: block;
-  padding-top: 100%; /* Vuelto al 100% para celdas perfectamente cuadradas */
+  padding-top: 90%; /* Reducido para evitar desbordamiento */
 }
 
 .cell-content {
@@ -187,7 +187,7 @@
 
 /* Estilo para el icono de globo */
 .globe-icon {
-  font-size: 14px; /* Aumentado de 12px a 14px */
+  font-size: 12px; /* Reducido tamaño */
   color: #222;
 }
 
@@ -248,15 +248,16 @@
   .bingo-table {
     border: 1px solid black !important;
     border-collapse: collapse;
-    margin: 0 auto !important; /* Aseguramos que se mantenga centrado en la impresión */
+    margin: 0 auto !important;
     padding: 0;
-    width: 92% !important; /* Aseguramos que mantenga el ancho reducido en la impresión */
+    width: 90% !important; /* Reducido para impresión */
   }
   
   .bingo-table td {
     border: 1px solid black !important;
     margin: 0;
     padding: 0;
+    font-size: 11px !important; /* Asegurar que el tamaño de fuente se mantenga en impresión */
   }
   
   .print-divider {
