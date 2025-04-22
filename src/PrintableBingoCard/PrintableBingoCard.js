@@ -8,7 +8,7 @@ const PrintableBingoCard = ({
   cardData, 
   cardId, 
   seriesInfo, 
-  price = "5.00",
+  price = "1.00",
   securityCode
 }) => {
   // Generar código de barras (simplificado para demostración)

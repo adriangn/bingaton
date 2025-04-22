@@ -143,7 +143,7 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
   const [formData, setFormData] = useState({
     seriesInfo: prizeConfig.seriesInfo || '',
     soldCards: prizeConfig.soldCards || 0,
-    cardPrice: prizeConfig.cardPrice || 5.00,
+    cardPrice: prizeConfig.cardPrice || 1.00,
     linePercentage: prizeConfig.linePercentage || 15,
     bingoPercentage: prizeConfig.bingoPercentage || 50,
     totalPrizePercentage: prizeConfig.totalPrizePercentage || 100
@@ -274,6 +274,19 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
               onChange={(value) => handleInputChange('cardPrice', value)}
               disabled={disabled}
             />
+            <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+              {[0.20, 0.50, 1.00, 2.00, 3.00].map(price => (
+                <Button 
+                  key={price}
+                  size="small"
+                  type={formData.cardPrice === price ? 'primary' : 'default'}
+                  onClick={() => handleInputChange('cardPrice', price)}
+                  disabled={disabled}
+                >
+                  {price.toFixed(2)}€
+                </Button>
+              ))}
+            </div>
           </Form.Item>
           
           <Form.Item 
@@ -389,7 +402,7 @@ const BingoGame = () => {
   const [gameConfig, setGameConfig] = useState({
     seriesInfo: prizeConfig.seriesInfo || '',
     soldCards: prizeConfig.soldCards || 0,
-    cardPrice: prizeConfig.cardPrice || 5.00,
+    cardPrice: prizeConfig.cardPrice || 1.00,
     intervalTime: intervalTime || 5,
     voiceEnabled: voiceConfig.enabled || true
   });
@@ -608,6 +621,19 @@ const BingoGame = () => {
                                 onChange={(value) => configurePrizes({ ...prizeConfig, cardPrice: value })}
                                 disabled={gameStatus === 'running'}
                               />
+                              <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+                                {[0.20, 0.50, 1.00, 2.00, 3.00].map(price => (
+                                  <Button 
+                                    key={price}
+                                    size="small"
+                                    type={prizeConfig.cardPrice === price ? 'primary' : 'default'}
+                                    onClick={() => configurePrizes({ ...prizeConfig, cardPrice: price })}
+                                    disabled={gameStatus === 'running'}
+                                  >
+                                    {price.toFixed(2)}€
+                                  </Button>
+                                ))}
+                              </div>
                             </Form.Item>
                             
                             <Form.Item 

@@ -132,7 +132,7 @@ export const BingoProvider = ({ children }) => {
   const [prizeConfig, setPrizeConfig] = useState({
     seriesInfo: '',      // Serie de los cartones
     soldCards: 0,        // Cantidad de cartones vendidos
-    cardPrice: 5.00,     // Precio por cartón
+    cardPrice: 1.00,     // Precio por cartón
     linePercentage: 15,  // Porcentaje para premio línea (15% por defecto)
     bingoPercentage: 50, // Porcentaje para premio bingo (50% por defecto)
     totalPrizePercentage: 100, // Porcentaje total a repartir (100% por defecto)
