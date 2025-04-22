@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Button, Typography, Divider, Space, InputNumber, Statistic, Row, Col, Switch, Slider, Form, Tabs, Input, Collapse } from 'antd';
-import { PlayCircleOutlined, PauseCircleOutlined, StopOutlined, SettingOutlined } from '@ant-design/icons';
+import { Card, Button, Typography, Divider, Space, InputNumber, Statistic, Row, Col, Switch, Slider, Form, Tabs, Input, Collapse, Table, Badge, Alert } from 'antd';
+import { PlayCircleOutlined, PauseCircleOutlined, StopOutlined, SettingOutlined, TrophyOutlined, TagOutlined } from '@ant-design/icons';
 import { useBingo } from '../../context/BingoContext';
 import BingoCardChecker from '../BingoCardChecker';
 import './BingoGame.css';
@@ -141,16 +141,18 @@ const BingoSettings = ({ voiceConfig, updateVoiceConfig, disabled, intervalTime,
 // Componente para la configuración de premios
 const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
   const [formData, setFormData] = useState({
-    seriesInfo: prizeConfig.seriesInfo || '',
-    soldCards: prizeConfig.soldCards || 0,
     cardPrice: prizeConfig.cardPrice || 1.00,
-    linePercentage: prizeConfig.linePercentage || 15,
-    bingoPercentage: prizeConfig.bingoPercentage || 50,
+    linePercentage: prizeConfig.linePercentage || 25,
+    bingoPercentage: prizeConfig.bingoPercentage || 75,
     totalPrizePercentage: prizeConfig.totalPrizePercentage || 100
   });
   
+  // Obtener valores de soldCards directamente de prizeConfig
+  // eslint-disable-next-line no-unused-vars
+  const { seriesInfo, soldCards } = prizeConfig;
+  
   // Calcular el bote total
-  const totalPot = formData.soldCards * formData.cardPrice;
+  const totalPot = soldCards * formData.cardPrice;
   const adjustmentFactor = formData.totalPrizePercentage / 100;
   const linePrize = totalPot * (formData.linePercentage / 100) * adjustmentFactor;
   const bingoPrize = totalPot * (formData.bingoPercentage / 100) * adjustmentFactor;
@@ -237,35 +239,20 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
     }
     
     setFormData(newData);
-    updatePrizeConfig(newData);
+    // Mantener los valores originales de seriesInfo y soldCards de prizeConfig
+    updatePrizeConfig({
+      ...prizeConfig,
+      cardPrice: newData.cardPrice,
+      linePercentage: newData.linePercentage,
+      bingoPercentage: newData.bingoPercentage,
+      totalPrizePercentage: newData.totalPrizePercentage
+    });
   };
   
   return (
     <Form layout="vertical" className="prize-settings-form">
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
-          <Form.Item label="Serie de los cartones">
-            <Input 
-              placeholder="Ej: A-1000000"
-              value={formData.seriesInfo}
-              onChange={(e) => handleInputChange('seriesInfo', e.target.value)}
-              disabled={disabled}
-            />
-          </Form.Item>
-          
-          <Form.Item 
-            label="Cartones vendidos"
-          >
-            <InputNumber 
-              min={0}
-              step={12}
-              style={{ width: '100%' }}
-              value={formData.soldCards}
-              onChange={(value) => handleInputChange('soldCards', value)}
-              disabled={disabled}
-            />
-          </Form.Item>
-          
           <Form.Item label="Precio por cartón (€)">
             <InputNumber 
               min={0}
@@ -371,6 +358,205 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
   );
 };
 
+// Componente para mostrar el resumen de ganadores
+const WinnersSummary = () => {
+  const { prizeConfig, linesClosed } = useBingo();
+  
+  // Generar la lista de ganadores sin repetidos
+  const winners = (() => {
+    // Crear un mapa para agrupar por número de cartón
+    const winnerMap = new Map();
+    
+    // Procesar ganadores de línea
+    if (prizeConfig.lineWinners && prizeConfig.lineWinners.length > 0) {
+      prizeConfig.lineWinners.forEach(cardNumber => {
+        const prize = calculateIndividualPrize('line', prizeConfig.lineWinners.length);
+        
+        if (winnerMap.has(cardNumber)) {
+          const existing = winnerMap.get(cardNumber);
+          // Actualizar si ya existe añadiendo el premio de línea
+          winnerMap.set(cardNumber, {
+            ...existing,
+            hasLine: true,
+            totalPrize: existing.totalPrize + prize,
+            prizes: [...existing.prizes, { type: 'line', prize }]
+          });
+        } else {
+          // Crear nuevo registro
+          winnerMap.set(cardNumber, {
+            cardNumber,
+            hasLine: true,
+            hasBingo: false,
+            totalPrize: prize,
+            prizes: [{ type: 'line', prize }]
+          });
+        }
+      });
+    }
+    
+    // Procesar ganadores de bingo
+    if (prizeConfig.bingoWinners && prizeConfig.bingoWinners.length > 0) {
+      prizeConfig.bingoWinners.forEach(cardNumber => {
+        const prize = calculateIndividualPrize('bingo', prizeConfig.bingoWinners.length);
+        
+        if (winnerMap.has(cardNumber)) {
+          const existing = winnerMap.get(cardNumber);
+          // Actualizar si ya existe añadiendo el premio de bingo
+          winnerMap.set(cardNumber, {
+            ...existing,
+            hasBingo: true,
+            totalPrize: existing.totalPrize + prize,
+            prizes: [...existing.prizes, { type: 'bingo', prize }]
+          });
+        } else {
+          // Crear nuevo registro
+          winnerMap.set(cardNumber, {
+            cardNumber,
+            hasLine: false,
+            hasBingo: true,
+            totalPrize: prize,
+            prizes: [{ type: 'bingo', prize }]
+          });
+        }
+      });
+    }
+    
+    // Convertir el mapa a un array
+    return Array.from(winnerMap.values());
+  })();
+  
+  // Calcular premio individual
+  function calculateIndividualPrize(type, winnersCount) {
+    if (!winnersCount) return 0;
+    
+    const { soldCards, cardPrice, linePercentage, bingoPercentage, totalPrizePercentage } = prizeConfig;
+    
+    if (!soldCards || !cardPrice) return 0;
+    
+    const totalPot = soldCards * cardPrice;
+    const adjustmentFactor = totalPrizePercentage / 100;
+    
+    if (type === 'line') {
+      const linePrize = totalPot * (linePercentage / 100) * adjustmentFactor;
+      return linePrize / winnersCount;
+    } else if (type === 'bingo') {
+      const bingoPrize = totalPot * (bingoPercentage / 100) * adjustmentFactor;
+      return bingoPrize / winnersCount;
+    }
+    
+    return 0;
+  }
+  
+  // Columnas de la tabla
+  const columns = [
+    {
+      title: 'Cartón #',
+      dataIndex: 'cardNumber',
+      key: 'cardNumber',
+      sorter: (a, b) => a.cardNumber - b.cardNumber,
+    },
+    {
+      title: 'Premio',
+      dataIndex: 'premios',
+      key: 'premios',
+      render: (_, record) => (
+        <Space>
+          {record.hasLine && (
+            <Badge 
+              count="LÍNEA" 
+              style={{ backgroundColor: '#1890ff', fontSize: '14px' }}
+            />
+          )}
+          {record.hasBingo && (
+            <Badge 
+              count="BINGO" 
+              style={{ backgroundColor: '#52c41a', fontSize: '14px' }}
+            />
+          )}
+        </Space>
+      )
+    },
+    {
+      title: 'Importe',
+      dataIndex: 'totalPrize',
+      key: 'totalPrize',
+      render: (text) => <Text strong style={{ color: '#faad14' }}>{text.toFixed(2)}€</Text>,
+      sorter: (a, b) => a.totalPrize - b.totalPrize,
+    }
+  ];
+  
+  // Calcular totales para la cabecera
+  const { soldCards, cardPrice, linePercentage, bingoPercentage, totalPrizePercentage } = prizeConfig;
+  const totalPot = soldCards * cardPrice;
+  const adjustmentFactor = totalPrizePercentage / 100;
+  
+  const totalLinePrize = totalPot * (linePercentage / 100) * adjustmentFactor;
+  const totalBingoPrize = totalPot * (bingoPercentage / 100) * adjustmentFactor;
+  
+  return (
+    <div className="winners-summary">
+      <Divider orientation="left" style={{ marginTop: 0, marginBottom: 12 }}>
+        <Space size="small">
+          <TrophyOutlined />
+          <span>Resumen de Premios</span>
+        </Space>
+      </Divider>
+      
+      <Row gutter={[8, 8]} style={{ marginBottom: '8px' }}>
+        <Col span={12}>
+          <Statistic
+            title="Premio a línea"
+            value={totalLinePrize.toFixed(2)}
+            suffix="€"
+            valueStyle={{ color: '#1890ff', fontSize: '18px' }}
+            prefix={<TagOutlined />}
+          />
+          {linesClosed && (
+            <Alert
+              message="Líneas cerradas"
+              type="warning"
+              showIcon
+              style={{ marginTop: '4px', padding: '4px 8px', fontSize: '12px' }}
+            />
+          )}
+        </Col>
+        <Col span={12}>
+          <Statistic
+            title="Premio a bingo"
+            value={totalBingoPrize.toFixed(2)}
+            suffix="€"
+            valueStyle={{ color: '#52c41a', fontSize: '18px' }}
+            prefix={<TagOutlined />}
+          />
+        </Col>
+      </Row>
+      
+      <div className="winners-table-container" style={{ flex: 1, overflow: 'auto' }}>
+        {winners.length > 0 ? (
+          <Table 
+            columns={columns} 
+            dataSource={winners.map((winner, index) => ({
+              ...winner,
+              key: `winner-${index}`
+            }))} 
+            pagination={false}
+            size="small"
+            bordered
+            scroll={{ y: 180 }}
+          />
+        ) : (
+          <Alert
+            message="No hay ganadores registrados"
+            description="Los ganadores aparecerán aquí cuando se validen cartones premiados"
+            type="info"
+            showIcon
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Componente principal BingoGame
 const BingoGame = () => {
   const {
@@ -400,7 +586,9 @@ const BingoGame = () => {
     soldCards: prizeConfig.soldCards || 0,
     cardPrice: prizeConfig.cardPrice || 1.00,
     intervalTime: intervalTime || 5,
-    voiceEnabled: voiceConfig.enabled || true
+    voiceEnabled: voiceConfig.enabled || true,
+    linePercentage: prizeConfig.linePercentage || 25,
+    bingoPercentage: prizeConfig.bingoPercentage || 75
   });
 
   // Manejar cambios en la configuración principal
@@ -471,32 +659,41 @@ const BingoGame = () => {
       {gameActive ? (
         <div className="active-game">
           <Row gutter={[16, 16]}>
-            <Col xs={24} md={12}>
-              <Card className="current-number-display">
-                <Statistic 
-                  title="Número Actual"
-                  value={currentNumber || '-'}
-                  valueStyle={{ 
-                    color: '#1890ff', 
-                    fontSize: 72,
-                    fontWeight: 'bold' 
-                  }}
-                />
+            <Col xs={24} md={14}>
+              <Card className="game-info-card">
+                <Row gutter={[8, 0]}>
+                  <Col xs={24} sm={14} className="current-number-container">
+                    <Statistic 
+                      title="Número Actual"
+                      value={currentNumber || '-'}
+                      valueStyle={{ 
+                        color: '#1890ff', 
+                        fontSize: 60,
+                        fontWeight: 'bold' 
+                      }}
+                    />
+                  </Col>
+                  <Col xs={24} sm={10}>
+                    <div className="stats-container">
+                      <Statistic 
+                        title="Números extraídos"
+                        value={extractedNumbers.length}
+                        suffix={`/ 90`}
+                        style={{ marginBottom: '16px' }}
+                      />
+                      <Statistic 
+                        title="Números restantes"
+                        value={remainingNumbers.length}
+                      />
+                    </div>
+                  </Col>
+                </Row>
               </Card>
             </Col>
             
-            <Col xs={24} md={12}>
-              <Card>
-                <Statistic 
-                  title="Total de números extraídos"
-                  value={extractedNumbers.length}
-                  suffix={`/ 90`}
-                />
-                <Divider />
-                <Statistic 
-                  title="Números restantes"
-                  value={remainingNumbers.length}
-                />
+            <Col xs={24} md={10}>
+              <Card className="winners-summary-card" style={{ height: '100%' }}>
+                <WinnersSummary />
               </Card>
             </Col>
           </Row>
@@ -628,19 +825,6 @@ const BingoGame = () => {
                                   </Button>
                                 ))}
                               </div>
-                            </Form.Item>
-                            
-                            <Form.Item 
-                              label="Cartones vendidos"
-                            >
-                              <InputNumber 
-                                min={0}
-                                step={12}
-                                style={{ width: '100%' }}
-                                value={prizeConfig.soldCards}
-                                onChange={(value) => configurePrizes({ ...prizeConfig, soldCards: value })}
-                                disabled={gameStatus === 'running'}
-                              />
                             </Form.Item>
                             
                             <Form.Item 
