@@ -253,7 +253,9 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
             />
           </Form.Item>
           
-          <Form.Item label="Cartones vendidos">
+          <Form.Item 
+            label="Cartones vendidos"
+          >
             <InputNumber 
               min={0}
               step={12}
@@ -298,18 +300,12 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
             }
           >
             <Slider 
-              min={35}  // Mínimo de 35% para poder cumplir con los mínimos de línea (5%) y bingo (30%)
+              min={35}
               max={100}
               step={5}
               value={formData.totalPrizePercentage}
               onChange={(value) => handleInputChange('totalPrizePercentage', value)}
               disabled={disabled}
-              marks={{ 
-                35: '35%', 
-                50: '50%', 
-                75: '75%',
-                100: '100%' 
-              }}
             />
           </Form.Item>
         </Col>
@@ -594,15 +590,13 @@ const BingoGame = () => {
                           />
                         </Form.Item>
                         
-                        <Form.Item label="Cartones vendidos">
-                          <InputNumber 
-                            min={0}
-                            step={12}
-                            style={{ width: '100%' }}
-                            value={prizeConfig.soldCards}
-                            onChange={(value) => configurePrizes({ ...prizeConfig, soldCards: value })}
-                            disabled={gameStatus === 'running'}
-                          />
+                        <Form.Item 
+                          label="Cartones vendidos"
+                          tooltip="Información sobre número de cartones en juego y recaudación"
+                        >
+                          <div style={{ padding: '5px 0' }}>
+                            <Text strong>{prizeConfig.soldCards}</Text> cartones × <Text strong>{prizeConfig.cardPrice.toFixed(2)}€</Text> = <Text strong type="success">{(prizeConfig.soldCards * prizeConfig.cardPrice).toFixed(2)}€</Text>
+                          </div>
                         </Form.Item>
                       </Col>
                     </Row>
@@ -634,6 +628,19 @@ const BingoGame = () => {
                                   </Button>
                                 ))}
                               </div>
+                            </Form.Item>
+                            
+                            <Form.Item 
+                              label="Cartones vendidos"
+                            >
+                              <InputNumber 
+                                min={0}
+                                step={12}
+                                style={{ width: '100%' }}
+                                value={prizeConfig.soldCards}
+                                onChange={(value) => configurePrizes({ ...prizeConfig, soldCards: value })}
+                                disabled={gameStatus === 'running'}
+                              />
                             </Form.Item>
                             
                             <Form.Item 

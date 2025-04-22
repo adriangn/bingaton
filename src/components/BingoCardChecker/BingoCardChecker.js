@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Button, Space, Alert, Typography, Divider, Row, Col, Badge, Spin, Statistic } from 'antd';
 import { CheckOutlined, SearchOutlined, ReloadOutlined, TrophyOutlined } from '@ant-design/icons';
 import { useBingo } from '../../context/BingoContext';
@@ -39,9 +39,19 @@ const BingoCardChecker = () => {
   } = useBingo();
   
   const [formData, setFormData] = useState({
-    seed: '',
+    seed: prizeConfig.seriesInfo || '',
     cardNumber: ''
   });
+  
+  // Actualizar la serie si cambia en la configuración
+  useEffect(() => {
+    if (prizeConfig.seriesInfo && prizeConfig.seriesInfo !== formData.seed) {
+      setFormData(prev => ({
+        ...prev,
+        seed: prizeConfig.seriesInfo
+      }));
+    }
+  }, [prizeConfig.seriesInfo]);
   
   // Manejar cambios en los inputs
   const handleInputChange = (e) => {
@@ -110,7 +120,7 @@ const BingoCardChecker = () => {
   // Resetear el formulario y resultados
   const handleReset = () => {
     setFormData({
-      seed: '',
+      seed: prizeConfig.seriesInfo || '',
       cardNumber: ''
     });
     setValidationResult(null);
@@ -198,18 +208,28 @@ const BingoCardChecker = () => {
       
       <Form layout="vertical">
         <Row gutter={16}>
-          <Col xs={24} md={12}>
-            <Form.Item label="Serie del cartón">
-              <Input
-                placeholder="Ej: A-1000000"
-                name="seed"
-                value={formData.seed}
-                onChange={handleInputChange}
-                disabled={isValidating}
-              />
-            </Form.Item>
+          <Col xs={24} md={prizeConfig.seriesInfo ? 24 : 12}>
+            {!prizeConfig.seriesInfo ? (
+              <Form.Item label="Serie del cartón">
+                <Input
+                  placeholder="Ej: A-1000000"
+                  name="seed"
+                  value={formData.seed}
+                  onChange={handleInputChange}
+                  disabled={isValidating}
+                />
+              </Form.Item>
+            ) : (
+              <Form.Item label="Serie del cartón">
+                <Input
+                  value={formData.seed}
+                  disabled={true}
+                  addonBefore="Serie configurada:"
+                />
+              </Form.Item>
+            )}
           </Col>
-          <Col xs={24} md={12}>
+          <Col xs={24} md={prizeConfig.seriesInfo ? 24 : 12}>
             <Form.Item label="Número del cartón">
               <Input
                 type="number"
