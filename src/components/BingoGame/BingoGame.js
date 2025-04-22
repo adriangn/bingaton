@@ -157,6 +157,10 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
   // Calcular porcentaje total actual (suma de línea y bingo)
   const currentDistributionSum = formData.linePercentage + formData.bingoPercentage;
   
+  // Proporción actual entre línea y bingo
+  const lineRatio = formData.linePercentage / currentDistributionSum;
+  const bingoRatio = formData.bingoPercentage / currentDistributionSum;
+  
   const handleInputChange = (field, value) => {
     const newData = { ...formData };
     
@@ -164,14 +168,71 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
     newData[field] = value;
     
     // Lógica especial para ajustar automáticamente los porcentajes
-    if (field === 'linePercentage') {
-      // Si cambia el porcentaje de línea, ajustar el de bingo para que sumen 100%
-      const difference = currentDistributionSum - value;
-      newData.bingoPercentage = Math.max(30, difference); // Mínimo 30% para bingo
+    if (field === 'totalPrizePercentage') {
+      // Al cambiar el porcentaje total, ajustar línea y bingo proporcionalmente
+      const newSum = value;
+      
+      // Calculamos los nuevos valores manteniendo la proporción
+      let newLine = Math.round(lineRatio * newSum);
+      let newBingo = Math.round(bingoRatio * newSum);
+      
+      // Ajustamos los valores para asegurar que suman exactamente el nuevo total
+      // y respetan los mínimos
+      if (newLine < 5) {
+        newLine = 5;
+        newBingo = newSum - 5;
+      } else if (newBingo < 30) {
+        newBingo = 30;
+        newLine = newSum - 30;
+      }
+      
+      // Si por algún motivo no se pueden cumplir los mínimos, ajustamos
+      if (newLine < 5 || newBingo < 30) {
+        // En este caso es imposible mantener los mínimos, así que asignamos
+        // los valores mínimos y ajustamos el total
+        newLine = 5;
+        newBingo = 30;
+        newData.totalPrizePercentage = 35;
+      } else {
+        // En caso de redondeo, ajustamos la diferencia al bingo
+        const adjustedSum = newLine + newBingo;
+        if (adjustedSum !== newSum) {
+          newBingo = newSum - newLine;
+        }
+      }
+      
+      newData.linePercentage = newLine;
+      newData.bingoPercentage = newBingo;
+    } else if (field === 'linePercentage') {
+      // Si cambia el porcentaje de línea, ajustar el de bingo para que sumen el total
+      newData.bingoPercentage = newData.totalPrizePercentage - value;
+      
+      // Verificar mínimos
+      if (newData.bingoPercentage < 30) {
+        newData.bingoPercentage = 30;
+        newData.linePercentage = newData.totalPrizePercentage - 30;
+        
+        // Si no se puede cumplir el mínimo de línea
+        if (newData.linePercentage < 5) {
+          newData.linePercentage = 5;
+          newData.totalPrizePercentage = 35;
+        }
+      }
     } else if (field === 'bingoPercentage') {
-      // Si cambia el porcentaje de bingo, ajustar el de línea para que sumen 100%
-      const difference = currentDistributionSum - value;
-      newData.linePercentage = Math.max(5, difference); // Mínimo 5% para línea
+      // Si cambia el porcentaje de bingo, ajustar el de línea para que sumen el total
+      newData.linePercentage = newData.totalPrizePercentage - value;
+      
+      // Verificar mínimos
+      if (newData.linePercentage < 5) {
+        newData.linePercentage = 5;
+        newData.bingoPercentage = newData.totalPrizePercentage - 5;
+        
+        // Si no se puede cumplir el mínimo de bingo
+        if (newData.bingoPercentage < 30) {
+          newData.bingoPercentage = 30;
+          newData.totalPrizePercentage = 35;
+        }
+      }
     }
     
     setFormData(newData);
@@ -223,15 +284,16 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
             }
           >
             <Slider 
-              min={10}
+              min={35}  // Mínimo de 35% para poder cumplir con los mínimos de línea (5%) y bingo (30%)
               max={100}
               step={5}
               value={formData.totalPrizePercentage}
               onChange={(value) => handleInputChange('totalPrizePercentage', value)}
               disabled={disabled}
               marks={{ 
-                10: '10%', 
+                35: '35%', 
                 50: '50%', 
+                75: '75%',
                 100: '100%' 
               }}
             />
@@ -260,7 +322,7 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
           >
             <Slider 
               min={5}
-              max={50}
+              max={Math.max(70, formData.totalPrizePercentage - 30)} // Máximo dinámico basado en el total
               value={formData.linePercentage}
               onChange={(value) => handleInputChange('linePercentage', value)}
               disabled={disabled}
@@ -277,7 +339,7 @@ const PrizeSettings = ({ prizeConfig, updatePrizeConfig, disabled }) => {
           >
             <Slider 
               min={30}
-              max={80}
+              max={Math.max(95, formData.totalPrizePercentage - 5)} // Máximo dinámico basado en el total
               value={formData.bingoPercentage}
               onChange={(value) => handleInputChange('bingoPercentage', value)}
               disabled={disabled}
